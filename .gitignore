@@ -1,0 +1,52 @@
+## Ignore Visual Studio temporary files, build results, and user-specific files
+.vs/
+.qsMonitor/.vs/
+.qsMonitor/bin/
+.qsMonitor/obj/
+*.user
+*.suo
+*.userosscache
+*.userprefs
+*.rsuser
+_ReSharper.Caches/
+
+## Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+## Visual Studio Code settings
+.vscode/
+
+## ASP.NET Scaffolding
+ScaffoldingReadMe.txt
+
+## DotNet Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## NuGet Packages
+*.nupkg
+# NuGet v3's project.json files produce dependency directories named "packages"
+packages/
+*.nuget/
+.nuget/
+
+## Backup & report files from converting an old project file
+Backup*/
+UpgradeLog*.XML
+UpgradeLog*.htm
+
+## Others
+*.DS_Store
+*.pdb
+*.cache
+*.bak
+/.vs/qsMonitor/v17/.suo
