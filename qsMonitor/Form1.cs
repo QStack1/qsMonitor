@@ -173,7 +173,9 @@ namespace qsMonitor
         // Form Size Changed
         private void Form1_Load(object sender, EventArgs e)
         {
-            
+            //this.BackColor = Color.DarkGreen;
+            //this.TransparencyKey = Color.Blue;
+            this.Opacity = 0.8;
         }
 
         private void notifyIcon1_MouseDoubleClick(object sender, MouseEventArgs e)
