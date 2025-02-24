@@ -240,9 +240,8 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 24F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.BackColor = System.Drawing.Color.Teal;
-            this.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("$this.BackgroundImage")));
-            this.ClientSize = new System.Drawing.Size(1338, 1084);
+            this.BackColor = System.Drawing.Color.DarkOliveGreen;
+            this.ClientSize = new System.Drawing.Size(1338, 444);
             this.Controls.Add(this.dangerZoneGB);
             this.Controls.Add(this.killButton);
             this.Controls.Add(this.taskList);
@@ -251,7 +250,7 @@
             this.ForeColor = System.Drawing.SystemColors.ControlLight;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(2, 4, 2, 4);
-            this.MinimumSize = new System.Drawing.Size(1080, 960);
+            this.MinimumSize = new System.Drawing.Size(1080, 500);
             this.Name = "Form1";
             this.Text = "QStack System Monitor";
             this.Load += new System.EventHandler(this.Form1_Load);
