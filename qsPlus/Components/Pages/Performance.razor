@@ -1,0 +1,98 @@
+@using qsPlus.Services
+@inject SystemPerformanceService PerformanceService
+@implements IDisposable
+
+<div class="performance-card">
+    <h3>System Performance</h3>
+    
+    <div class="performance-item">
+        <span class="label">Uptime:</span>
+        <span class="value">@PerformanceService.GetFormattedUptime()</span>
+    </div>
+    
+    <div class="performance-item">
+        <span class="label">CPU Usage:</span>
+        <span class="value">@cpuUsage%</span>
+        <div class="progress-bar">
+            <div class="progress" style="width: @cpuUsage%"></div>
+        </div>
+    </div>
+    
+    <div class="performance-item">
+        <span class="label">Available RAM:</span>
+        <span class="value">@availableRam MB</span>
+    </div>
+    
+    <div class="performance-item">
+        <span class="label">OS:</span>
+        <span class="value">@PerformanceService.GetOperatingSystemInfo()</span>
+    </div>
+    
+    <div class="performance-item">
+        <span class="label">Processors:</span>
+        <span class="value">@PerformanceService.GetProcessorCount()</span>
+    </div>
+</div>
+
+@code {
+    private double cpuUsage = 0;
+    private double availableRam = 0;
+    private System.Threading.Timer? _timer;
+    
+    protected override void OnInitialized()
+    {
+        // Update performance data initially
+        UpdatePerformanceData();
+        
+        // Set up timer to refresh values every 5 seconds
+        _timer = new System.Threading.Timer(_ =>
+        {
+            UpdatePerformanceData();
+            InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+    }
+    
+    private void UpdatePerformanceData()
+    {
+        cpuUsage = PerformanceService.GetCpuUsage();
+        availableRam = PerformanceService.GetAvailableRamInMB();
+    }
+    
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+}
+
+<style>
+    .performance-card {
+        background-color: #f5f5f5;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .performance-item {
+        margin-bottom: 12px;
+    }
+    
+    .label {
+        font-weight: bold;
+        display: inline-block;
+        width: 130px;
+    }
+    
+    .progress-bar {
+        height: 8px;
+        background-color: #e0e0e0;
+        border-radius: 4px;
+        margin-top: 4px;
+        overflow: hidden;
+    }
+    
+    .progress {
+        height: 100%;
+        background-color: #4caf50;
+    }
+</style>

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using qsPlus.Services;
 
 namespace qsPlus;
 
@@ -15,6 +16,7 @@ public static class MauiProgram
 			});
 
 		builder.Services.AddMauiBlazorWebView();
+		builder.Services.AddSingleton<SystemPerformanceService>();
 
 #if DEBUG
 		builder.Services.AddBlazorWebViewDeveloperTools();

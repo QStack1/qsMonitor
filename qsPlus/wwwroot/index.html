@@ -23,6 +23,48 @@
         <a class="dismiss">🗙</a>
     </div>
 
+    <script>
+        // Theme functions
+        window.isDarkTheme = function() {
+            return document.documentElement.classList.contains('dark-theme');
+        }
+        
+        window.setTheme = function(theme) {
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark-theme');
+                localStorage.setItem('theme', 'dark');
+                
+                // For MAUI integration
+                try {
+                    if (window.JSInterop && window.JSInterop.setAppTheme) {
+                        window.JSInterop.setAppTheme('dark');
+                    }
+                } catch (e) {
+                    console.error('Failed to set native theme:', e);
+                }
+            } else {
+                document.documentElement.classList.remove('dark-theme');
+                localStorage.setItem('theme', 'light');
+                
+                // For MAUI integration
+                try {
+                    if (window.JSInterop && window.JSInterop.setAppTheme) {
+                        window.JSInterop.setAppTheme('light');
+                    }
+                } catch (e) {
+                    console.error('Failed to set native theme:', e);
+                }
+            }
+        }
+        
+        // Check for saved theme preference or prefer-color-scheme
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            window.setTheme(savedTheme);
+        } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            window.setTheme('dark');
+        }
+    </script>
     <script src="_framework/blazor.webview.js" autostart="false"></script>
 
 </body>

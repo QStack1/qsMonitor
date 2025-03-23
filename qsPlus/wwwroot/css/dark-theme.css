@@ -1,0 +1,122 @@
+:root {
+    --primary-bg: #121212;
+    --secondary-bg: #1e1e1e;
+    --card-bg: #2d2d2d;
+    --border-color: #444;
+    --text-color: #e0e0e0;
+    --text-muted: #aaa;
+    --accent-color: #0078d7;
+    --accent-hover: #1e90ff;
+    --success-color: #4caf50;
+    --warning-color: #ffb300;
+    --danger-color: #f44336;
+    --info-color: #2196f3;
+}
+
+body {
+    background-color: var(--primary-bg);
+    color: var(--text-color);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    padding: 1rem;
+}
+
+.card {
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-color);
+}
+
+a {
+    color: var(--accent-color);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--accent-hover);
+    text-decoration: underline;
+}
+
+button, .btn {
+    background-color: var(--accent-color);
+    border: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover, .btn:hover {
+    background-color: var(--accent-hover);
+}
+
+input, select, textarea {
+    background-color: var(--secondary-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    padding: 0.5rem;
+    border-radius: 4px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    border: 1px solid var(--border-color);
+    padding: 0.5rem;
+    text-align: left;
+}
+
+th {
+    background-color: var(--secondary-bg);
+}
+
+/* Performance component styles */
+.performance-card {
+    background-color: var(--card-bg);
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.performance-item {
+    margin-bottom: 12px;
+}
+
+.label {
+    font-weight: bold;
+    display: inline-block;
+    width: 130px;
+    color: var(--text-color);
+}
+
+.value {
+    color: var(--text-color);
+}
+
+.progress-bar {
+    height: 8px;
+    background-color: var(--secondary-bg);
+    border-radius: 4px;
+    margin-top: 4px;
+    overflow: hidden;
+}
+
+.progress {
+    height: 100%;
+    background-color: var(--success-color);
+}
