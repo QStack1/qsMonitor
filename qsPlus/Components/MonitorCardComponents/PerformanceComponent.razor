@@ -1,0 +1,218 @@
+@using qsPlus.Services
+@using qsPlus.Components.MonitorCardComponents
+@inject SystemPerformanceService PerformanceService
+@implements IDisposable
+
+<link href="css/performance.css" rel="stylesheet" />
+    
+<div class="row row-cols-1 row-cols-md-1 g-4 mb-5">
+    <div class="col">
+        <div class="card performance-card h-100">
+            <div class="card-header-custom">
+                <div class="icon-container icon-pulse">
+                    <i class="bi bi-activity fs-1 text-white"></i>
+                </div>
+                <h4 class="card-title text-center mb-0">System Metrics</h4>
+            </div>
+            
+            <div class="card-body p-4">
+                @if (!isLoaded)
+                {
+                    <div class="text-center my-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Loading system metrics...</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="performance-item">
+                                <span class="label">Uptime</span>
+                                <span class="value">@PerformanceService.GetFormattedUptime()</span>
+                            </div>
+                            
+                            <div class="performance-item">
+                                <span class="label">Operating System</span>
+                                <span class="value">@PerformanceService.GetOperatingSystemInfo()</span>
+                            </div>
+                            
+                            <div class="performance-item">
+                                <span class="label">Processors</span>
+                                <span class="value">@PerformanceService.GetProcessorCount()</span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="performance-item @(cpuUsage > 80 ? "critical" : cpuUsage > 60 ? "warning" : "")">
+                                <span class="label">CPU Usage</span>
+                                <div class="d-flex justify-content-between">
+                                    <span class="value">@cpuUsage.ToString("0.0")%</span>
+                                    <i class="@(cpuUsage > 80 ? "bi bi-exclamation-triangle text-danger" : 
+                                                cpuUsage > 60 ? "bi bi-exclamation-circle text-warning" : 
+                                                "bi bi-check-circle text-success")"></i>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress" style="width: @cpuUsage%"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="performance-item">
+                                <span class="label">Available RAM</span>
+                                <span class="value">@availableRam.ToString("N0") MB / @totalRam.ToString("N0") MB</span>
+                                <div class="progress-bar">
+                                    <div class="progress" style="width: @(100 - (availableRam / totalRam * 100))%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (lastError != null)
+                        {
+                            <div class="col-12 mt-3">
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    @lastError
+                                    <button type="button" class="btn btn-sm btn-outline-primary ms-3" @onclick="RefreshData">
+                                        <i class="bi bi-arrow-clockwise me-1"></i> Retry
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private double cpuUsage = 0;
+    private double availableRam = 0;
+    private double totalRam = 1;
+    private System.Threading.Timer? _timer;
+    private bool isLoaded = false;
+    private string? lastError = null;
+    private int failedAttempts = 0;
+    private static readonly SemaphoreSlim _updateLock = new SemaphoreSlim(1, 1);
+    
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Get total RAM first (static value)
+            totalRam = PerformanceService.GetTotalRamInMB();
+            
+            // Initial data load
+            await RefreshData();
+            
+            // Start periodic updates with a longer period than usual
+            _timer = new System.Threading.Timer(
+                async _ => await UpdateTimerCallback(),
+                null,
+                TimeSpan.FromSeconds(1), // Start after 1 second
+                TimeSpan.FromSeconds(3)  // Then every 3 seconds
+            );
+        }
+        catch (Exception ex)
+        {
+            lastError = $"Failed to initialize performance metrics: {ex.Message}";
+            isLoaded = true; // Still mark as loaded to show the error
+        }
+    }
+    
+    private async Task RefreshData()
+    {
+        try
+        {
+            lastError = null;
+            
+            // For the first load, use a Task.Run to avoid blocking UI
+            if (!isLoaded)
+            {
+                await Task.Run(() => {
+                    UpdatePerformanceData();
+                });
+                isLoaded = true;
+            }
+            else
+            {
+                UpdatePerformanceData();
+            }
+            
+            failedAttempts = 0;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            lastError = $"Error updating performance data: {ex.Message}";
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+    
+    private async Task UpdateTimerCallback()
+    {
+        // Use a semaphore to prevent overlapping updates
+        if (!await _updateLock.WaitAsync(0))
+        {
+            return; // If an update is already in progress, just skip this one
+        }
+        
+        try
+        {
+            await RefreshData();
+        }
+        catch (Exception ex)
+        {
+            failedAttempts++;
+            
+            if (failedAttempts > 3)
+            {
+                lastError = $"Multiple errors updating data: {ex.Message}";
+                await InvokeAsync(StateHasChanged);
+            }
+            
+            // If we've had too many failures, slow down the polling
+            if (failedAttempts > 5 && _timer != null)
+            {
+                _timer.Change(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+            }
+        }
+        finally
+        {
+            _updateLock.Release();
+        }
+    }
+    
+    private void UpdatePerformanceData()
+    {
+        // We'll enqueue these separately in case one fails
+        try
+        {
+            cpuUsage = PerformanceService.GetCpuUsage();
+        }
+        catch (Exception ex)
+        {
+            lastError = $"Failed to get CPU usage: {ex.Message}";
+        }
+        
+        try
+        {
+            availableRam = PerformanceService.GetAvailableRamInMB();
+        }
+        catch (Exception ex)
+        {
+            if (lastError == null) // Only overwrite if no CPU error
+            {
+                lastError = $"Failed to get RAM usage: {ex.Message}";
+            }
+        }
+    }
+    
+    public void Dispose()
+    {
+        _timer?.Dispose();
+        _updateLock.Dispose();
+    }
+}

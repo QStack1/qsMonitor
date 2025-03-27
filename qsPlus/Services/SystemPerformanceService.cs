@@ -57,7 +57,7 @@ public class SystemPerformanceService
                 if (_isFirstCpuCall)
                 {
                     _isFirstCpuCall = false;
-                    Thread.Sleep(100);
+                    Thread.Sleep(200);
                     value = _cpuCounter.NextValue();
                 }
                 

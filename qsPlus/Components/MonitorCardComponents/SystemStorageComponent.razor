@@ -1,0 +1,201 @@
+@using qsPlus.Services
+@inject SystemPerformanceService PerformanceService
+@inject SystemStorageService StorageService
+@implements IDisposable
+
+<link href="css/systemStorage.css" rel="stylesheet" />
+
+<div class="container py-4">
+    <div class="row row-cols-1 row-cols-md-1 g-4 mb-5">
+        <div class="col">
+            <div class="card performance-card h-100">
+                <div class="card-header-custom">
+                    <div class="icon-container">
+                        <i class="bi bi-hdd-stack fs-1 text-white"></i>
+                    </div>
+                    <h4 class="card-title text-center mb-0">Storage Analysis</h4>
+                </div>
+                
+                <div class="card-body p-4">
+                    @if (!storageLoaded)
+                    {
+                        <div class="text-center my-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Analyzing storage...</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Disk Information -->
+                        <h5 class="mb-3">Disk Usage</h5>
+                        <div class="row mb-4">
+                            @foreach (var disk in disks)
+                            {
+                                <div class="col-md-6 mb-3">
+                                    <div class="performance-item @(disk.UsagePercent > 90 ? "critical" : disk.UsagePercent > 75 ? "warning" : "")">
+                                        <div class="d-flex justify-content-between">
+                                            <span class="label">@disk.Name (@disk.Type)</span>
+                                            <span class="badge @(disk.UsagePercent > 90 ? "bg-danger" : disk.UsagePercent > 75 ? "bg-warning" : "bg-success")">
+                                                @disk.UsagePercent%
+                                            </span>
+                                        </div>
+                                        <span class="value">@disk.FreeSpaceFormatted free of @disk.TotalSizeFormatted</span>
+                                        <div class="progress-bar">
+                                            <div class="progress" style="width: @disk.UsagePercent%"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                        
+                        <!-- Folder Analysis -->
+                        @if (selectedDrive != null && largestFolders.Any())
+                        {
+                            <h5 class="mb-3">Largest Folders on @selectedDrive.Name</h5>
+                            <div class="storage-chart mb-3">
+                                <div class="chart-container">
+                                    @foreach (var folder in largestFolders)
+                                    {
+                                        <div class="chart-segment" style="width: @folder.Percentage%" title="@folder.Name (@folder.SizeFormatted)">
+                                            <div class="segment-label">@folder.Percentage%</div>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="mt-2">
+                                    <small class="text-muted">Click on a drive to analyze its folders</small>
+                                </div>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Folder</th>
+                                            <th>Size</th>
+                                            <th>% of Drive</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var folder in largestFolders)
+                                        {
+                                            <tr>
+                                                <td title="@folder.Path">@folder.Name</td>
+                                                <td>@folder.SizeFormatted</td>
+                                                <td>
+                                                    <div class="progress-bar" style="width: 100px">
+                                                        <div class="progress" style="width: @folder.Percentage%"></div>
+                                                    </div>
+                                                    <span class="ms-2">@folder.Percentage%</span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else if (storageError != null)
+                        {
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i> @storageError
+                            </div>
+                        }
+                        else if (selectedDrive != null)
+                        {
+                            <div class="text-center my-5">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2">Analyzing folders on @selectedDrive.Name...</p>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center my-3">
+                                <p>Click on a drive to analyze its largest folders</p>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private System.Threading.Timer? _timer;
+    private bool isLoaded = false;
+    private bool storageLoaded = false;
+    private List<SystemStorageService.DiskInfo> disks = new();
+    private SystemStorageService.DiskInfo? selectedDrive;
+    private List<SystemStorageService.FolderInfo> largestFolders = new();
+    private string? storageError;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        
+        // Load performance data asynchronously
+        await Task.Run(() => {
+            isLoaded = true;
+        });
+        
+        // Load storage information
+        await LoadStorageData();
+        
+        // Update the UI
+        StateHasChanged();
+        
+        // Set up timer for subsequent updates
+        _timer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(StateHasChanged);
+        }, null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
+    }
+    
+    private async Task LoadStorageData()
+    {
+        try
+        {
+            disks = StorageService.GetDriveInfo();
+            storageLoaded = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            storageError = $"Error loading storage information: {ex.Message}";
+        }
+    }
+    
+    private async Task SelectDrive(SystemStorageService.DiskInfo drive)
+    {
+        try
+        {
+            selectedDrive = drive;
+            storageError = null;
+            largestFolders.Clear();
+            StateHasChanged();
+            
+            largestFolders = await StorageService.GetLargestFoldersAsync(drive.Name, 5);
+            
+            if (!largestFolders.Any())
+            {
+                storageError = "No accessible folders found or drive is empty.";
+            }
+        }
+        catch (UnauthorizedAccessException)
+        {
+            storageError = "Access denied. You may need to run the application as Administrator.";
+        }
+        catch (Exception ex)
+        {
+            storageError = $"Error analyzing folders: {ex.Message}";
+        }
+        StateHasChanged();
+    }
+    
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+}
