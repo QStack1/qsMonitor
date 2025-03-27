@@ -826,3 +826,341 @@
         _timer?.Dispose();
     }
 }
+@* 
+
+<!-- Add this section for disk I/O metrics -->
+<div class="mt-4">
+    <h5 class="mb-3">Disk Performance</h5>
+    <div class="row">
+        @foreach (var disk in diskPerformanceMetrics)
+        {
+            <div class="col-md-6 mb-3">
+                <div class="storage-item">
+                    <h6>@disk.Name</h6>
+                    
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Read Speed:</span>
+                            <span>@disk.ReadSpeedFormatted</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Write Speed:</span>
+                            <span>@disk.WriteSpeedFormatted</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Active Time:</span>
+                            <span>@disk.ActiveTimePercentage%</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Queue Length:</span>
+                            <span>@disk.QueueLength</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <div class="progress-container">
+                            <div class="progress-fill" style="width: @disk.ActiveTimePercentage%"></div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-1">
+                            <small class="text-muted">Disk Activity</small>
+                            <small>@disk.ActiveTimePercentage%</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Add this section for file permission analysis -->
+<div class="mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">File Permissions</h5>
+        <button class="btn btn-sm btn-outline-primary" @onclick="AnalyzePermissions">
+            <i class="bi bi-shield-lock me-1"></i> Analyze Permissions
+        </button>
+    </div>
+    
+    @if (isAnalyzingPermissions)
+    {
+        <div class="text-center my-3">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Analyzing...</span>
+            </div>
+            <p class="mt-2">Analyzing file permissions...</p>
+        </div>
+    }
+    else if (permissionIssues.Any())
+    {
+        <div class="alert alert-warning mb-3">
+            <i class="bi bi-exclamation-triangle me-2"></i> Found @permissionIssues.Count potential permission issues.
+        </div>
+        
+        <div class="table-responsive">
+            <table class="table table-hover theme-table">
+                <thead class="table-header">
+                    <tr>
+                        <th scope="col">Path</th>
+                        <th scope="col">Issue</th>
+                        <th scope="col">Risk Level</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var issue in permissionIssues)
+                    {
+                        <tr>
+                            <td title="@issue.Path" class="text-truncate" style="max-width: 300px;">@issue.Path</td>
+                            <td>@issue.Description</td>
+                            <td>
+                                <span class="badge @(issue.RiskLevel == "High" ? "bg-danger" : issue.RiskLevel == "Medium" ? "bg-warning" : "bg-info")">
+                                    @issue.RiskLevel
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenFolder(new SystemStorageService.FolderInfo { Path = Path.GetDirectoryName(issue.Path) })">
+                                    <i class="bi bi-folder-symlink"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (permissionsAnalyzed)
+    {
+        <div class="alert alert-success">
+            <i class="bi bi-shield-check me-2"></i> No permission issues found in the analyzed location.
+        </div>
+    }
+</div>
+
+<!-- Add this section for storage health checks -->
+<div class="mt-4">
+    <h5 class="mb-3">Storage Health</h5>
+    <div class="row">
+        @foreach (var drive in disks.Where(d => d.Type == "Fixed"))
+        {
+            <div class="col-md-6 mb-3">
+                <div class="storage-item @(drive.Health == "Healthy" ? "health-good" : drive.Health == "Warning" ? "health-warning" : "health-critical")">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">@drive.Name Drive Health</h6>
+                        <span class="badge @(drive.Health == "Healthy" ? "bg-success" : drive.Health == "Warning" ? "bg-warning" : "bg-danger")">
+                            @drive.Health
+                        </span>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>SMART Status:</span>
+                            <span>@drive.SmartStatus</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Temperature:</span>
+                            <span>@drive.Temperature°C</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Read/Write Errors:</span>
+                            <span>@drive.ErrorCount</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Powered On:</span>
+                            <span>@drive.PowerOnHours hours</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <button class="btn btn-sm btn-outline-primary" @onclick="() => RunDiskCheck(drive.Name)">
+                            <i class="bi bi-shield-check me-1"></i> Run Health Check
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Add this section for large files finder -->
+<div class="mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Largest Files</h5>
+        <button class="btn btn-sm btn-outline-primary" @onclick="FindLargeFiles">
+            <i class="bi bi-file-earmark-plus me-1"></i> Find Large Files
+        </button>
+    </div>
+    
+    @if (isSearchingLargeFiles)
+    {
+        <div class="text-center my-3">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Searching...</span>
+            </div>
+            <p class="mt-2">Searching for large files...</p>
+        </div>
+    }
+    else if (largeFiles.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-hover theme-table">
+                <thead class="table-header">
+                    <tr>
+                        <th scope="col">File Name</th>
+                        <th scope="col">Size</th>
+                        <th scope="col">Type</th>
+                        <th scope="col">Modified</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var file in largeFiles)
+                    {
+                        <tr>
+                            <td title="@file.Path">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-file-earmark me-2"></i>
+                                    <span class="file-name">@file.Name</span>
+                                </div>
+                            </td>
+                            <td>@file.SizeFormatted</td>
+                            <td>@file.Type</td>
+                            <td>@file.Modified.ToString("yyyy-MM-dd")</td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenFolder(new SystemStorageService.FolderInfo { Path = Path.GetDirectoryName(file.Path) })">
+                                        <i class="bi bi-folder-symlink"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</div>
+
+<!-- Add this section for storage trend analysis -->
+<div class="mt-4">
+    <h5 class="mb-3">Storage Trends</h5>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="storage-chart p-3">
+                <canvas id="storageTrendChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="storage-item p-3">
+                <h6>Storage Growth</h6>
+                @if (storageTrends.Any())
+                {
+                    <div class="d-flex flex-column">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Last Week:</span>
+                            <span class="@(storageTrends[0].GrowthBytes > 0 ? "text-danger" : "text-success")">
+                                @(storageTrends[0].GrowthFormatted)
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Last Month:</span>
+                            <span class="@(storageTrends[1].GrowthBytes > 0 ? "text-danger" : "text-success")">
+                                @(storageTrends[1].GrowthFormatted)
+                            </span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>Last Year:</span>
+                            <span class="@(storageTrends[2].GrowthBytes > 0 ? "text-danger" : "text-success")">
+                                @(storageTrends[2].GrowthFormatted)
+                            </span>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted small">Storage trend data will appear after multiple scans.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add this section for duplicate file analysis -->
+<div class="mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Duplicate Files</h5>
+        <button class="btn btn-sm btn-outline-primary" @onclick="ScanForDuplicates">
+            <i class="bi bi-files me-1"></i> Scan for Duplicates
+        </button>
+    </div>
+    
+    @if (isDuplicateScanning)
+    {
+        <div class="text-center my-3">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Scanning...</span>
+            </div>
+            <p class="mt-2">Scanning for duplicate files...</p>
+        </div>
+    }
+    else if (duplicateFiles.Any())
+    {
+        <div class="table-responsive">
+            <table class="table table-hover theme-table">
+                <thead class="table-header">
+                    <tr>
+                        <th scope="col">File Hash</th>
+                        <th scope="col">Size</th>
+                        <th scope="col">Count</th>
+                        <th scope="col">Wasted Space</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var group in duplicateFiles)
+                    {
+                        <tr @onclick="() => ToggleDuplicateGroup(group.Hash)">
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-files me-2"></i>
+                                    <span>@group.Name</span>
+                                </div>
+                            </td>
+                            <td>@group.SizeFormatted</td>
+                            <td>@group.Count files</td>
+                            <td>@group.WastedSpaceFormatted</td>
+                            <td>
+                                <i class="bi @(expandedDuplicateGroups.Contains(group.Hash) ? "bi-chevron-up" : "bi-chevron-down")"></i>
+                            </td>
+                        </tr>
+                        
+                        @if (expandedDuplicateGroups.Contains(group.Hash))
+                        {
+                            @foreach (var file in group.Files)
+                            {
+                                <tr class="duplicate-file-row">
+                                    <td colspan="4" class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <i class="bi bi-file-earmark me-2"></i>
+                                            <span class="text-truncate" title="@file.Path">@file.Path</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenFile(file.Path)">
+                                            <i class="bi bi-folder-symlink"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (duplicateFilesScanned)
+    {
+        <div class="alert alert-success">
+            <i class="bi bi-check-circle me-2"></i> No duplicate files found in the selected location.
+        </div>
+    }
+</div> *@
