@@ -3,6 +3,9 @@
 @inject IJSRuntime JSRuntime
 @implements IAsyncDisposable
 
+<link href="css/performance.css" rel="stylesheet" />
+<link href="css/systemStorage.css" rel="stylesheet" />
+<script src="js/storage-helpers.js"></script>
 <div class="page @(ThemeService.IsDarkMode ? "dark-mode" : "")">
     <div class="sidebar">
         <NavMenu />

@@ -1,21 +1,16 @@
+@using System.Windows.Forms
 @using qsPlus.Services
 @inject SystemPerformanceService PerformanceService
 @inject SystemStorageService StorageService
+@* @inject FolderPickerService FolderPicker *@
 @implements IDisposable
-
-<link href="css/systemStorage.css" rel="stylesheet" />
+@using System.IO
+@using System.Diagnostics
 
 <div class="container py-4">
     <div class="row row-cols-1 row-cols-md-1 g-4 mb-5">
         <div class="col">
             <div class="card performance-card h-100">
-                <div class="card-header-custom">
-                    <div class="icon-container">
-                        <i class="bi bi-hdd-stack fs-1 text-white"></i>
-                    </div>
-                    <h4 class="card-title text-center mb-0">Storage Analysis</h4>
-                </div>
-                
                 <div class="card-body p-4">
                     @if (!storageLoaded)
                     {
@@ -29,12 +24,21 @@
                     else
                     {
                         <!-- Disk Information -->
-                        <h5 class="mb-3">Disk Usage</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Disk Usage</h5>
+                            <button class="btn btn-sm btn-outline-primary" @onclick="SelectCustomDirectory">
+                                <i class="bi bi-folder-plus me-1"></i> Analyze Custom Folder
+                            </button>
+                        </div>
+                        
                         <div class="row mb-4">
                             @foreach (var disk in disks)
                             {
                                 <div class="col-md-6 mb-3">
-                                    <div class="performance-item @(disk.UsagePercent > 90 ? "critical" : disk.UsagePercent > 75 ? "warning" : "")">
+                                    <div class="performance-item @(disk.UsagePercent > 90 ? "critical" : disk.UsagePercent > 75 ? "warning" : "") 
+                                            @(selectedDrive?.Name == disk.Name ? "selected" : "") 
+                                            disk-card" 
+                                        @onclick="() => SelectDrive(disk)">
                                         <div class="d-flex justify-content-between">
                                             <span class="label">@disk.Name (@disk.Type)</span>
                                             <span class="badge @(disk.UsagePercent > 90 ? "bg-danger" : disk.UsagePercent > 75 ? "bg-warning" : "bg-success")">
@@ -45,26 +49,95 @@
                                         <div class="progress-bar">
                                             <div class="progress" style="width: @disk.UsagePercent%"></div>
                                         </div>
+                                        
+                                        <div class="mt-1 text-end">
+                                            <small class="text-muted"><i class="bi bi-search"></i> Analyze</small>
+                                        </div>
                                     </div>
                                 </div>
                             }
                         </div>
                         
-                        <!-- Folder Analysis -->
-                        @if (selectedDrive != null && largestFolders.Any())
+                        <!-- Custom Path Input (shown when custom analysis is requested) -->
+                        @if (showCustomPathInput)
                         {
-                            <h5 class="mb-3">Largest Folders on @selectedDrive.Name</h5>
+                            <div class="card mb-4 bg-light">
+                                <div class="card-body">
+                                    <h6 class="mb-3">Analyze Custom Folder</h6>
+                                    <div class="input-group mb-3">
+                                        <input type="text" class="form-control" placeholder="Enter folder path (e.g., C:\Users\YourName\Documents)" 
+                                               @bind="customPath" />
+                                        <button class="btn btn-primary" @onclick="AnalyzeCustomPath">
+                                            <i class="bi bi-search me-1"></i> Analyze
+                                        </button>
+                                        <button class="btn btn-outline-secondary" @onclick="SelectFolderAndAnalyze">
+                                            <i class="bi bi-folder me-1"></i> Browse...
+                                        </button>
+                                    </div>
+                                    <div class="form-text">
+                                        <small>Enter a folder path manually or click Browse to select a folder.</small>
+                                    </div>
+                                    <div class="d-flex justify-content-end mt-2">
+                                        <button class="btn btn-sm btn-link" @onclick="() => showCustomPathInput = false">
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        
+                        <!-- Recent directories -->
+                        @if (recentDirectories.Count > 0 && !showCustomPathInput)
+                        {
+                            <div class="mb-4">
+                                <h6 class="mb-2">Recent Folders</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach (var dir in recentDirectories)
+                                    {
+                                        <button class="btn btn-sm btn-outline-secondary" 
+                                                @onclick="() => AnalyzeCustomPath(dir)">
+                                            <i class="bi bi-folder me-1"></i> @GetShortPath(dir)
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        
+                        <!-- Folder Analysis -->
+                        @if ((selectedDrive != null || !string.IsNullOrEmpty(customPath)) && largestFolders.Any())
+                        {
+                            <h5 class="mb-3">
+                                @if (selectedDrive != null)
+                                {
+                                    <span>Largest Folders on @selectedDrive.Name</span>
+                                }
+                                else if (!string.IsNullOrEmpty(analyzedPath))
+                                {
+                                    <span>Largest Folders in @GetShortPath(analyzedPath)</span>
+                                }
+                            </h5>
+                            
                             <div class="storage-chart mb-3">
                                 <div class="chart-container">
                                     @foreach (var folder in largestFolders)
                                     {
-                                        <div class="chart-segment" style="width: @folder.Percentage%" title="@folder.Name (@folder.SizeFormatted)">
+                                        <div class="chart-segment" 
+                                            style="width: @folder.Percentage%" 
+                                            title="@folder.Name (@folder.SizeFormatted)" 
+                                            @onclick="() => OpenFolder(folder)">
                                             <div class="segment-label">@folder.Percentage%</div>
                                         </div>
                                     }
                                 </div>
-                                <div class="mt-2">
-                                    <small class="text-muted">Click on a drive to analyze its folders</small>
+                                <div class="d-flex justify-content-between align-items-center mt-3">
+                                    <small class="text-muted">Click on a segment to open that folder</small>
+                                    @if (!string.IsNullOrEmpty(analyzedPath))
+                                    {
+                                        <button class="btn btn-sm btn-outline-primary" 
+                                                @onclick="() => OpenFolder(new SystemStorageService.FolderInfo { Path = analyzedPath })">
+                                            <i class="bi bi-folder-symlink me-1"></i> Open Current Folder
+                                        </button>
+                                    }
                                 </div>
                             </div>
                             
@@ -74,20 +147,35 @@
                                         <tr>
                                             <th>Folder</th>
                                             <th>Size</th>
-                                            <th>% of Drive</th>
+                                            <th>% of Total</th>
+                                            <th></th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         @foreach (var folder in largestFolders)
                                         {
                                             <tr>
-                                                <td title="@folder.Path">@folder.Name</td>
+                                                <td title="@folder.Path">
+                                                    <i class="bi bi-folder me-1"></i> @folder.Name
+                                                </td>
                                                 <td>@folder.SizeFormatted</td>
                                                 <td>
-                                                    <div class="progress-bar" style="width: 100px">
-                                                        <div class="progress" style="width: @folder.Percentage%"></div>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="progress-bar" style="width: 100px">
+                                                            <div class="progress" style="width: @folder.Percentage%"></div>
+                                                        </div>
+                                                        <span class="ms-2">@folder.Percentage%</span>
                                                     </div>
-                                                    <span class="ms-2">@folder.Percentage%</span>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex gap-2">
+                                                        <button class="btn btn-sm btn-outline-primary" @onclick="() => OpenFolder(folder)">
+                                                            <i class="bi bi-folder-symlink"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-secondary" @onclick="() => AnalyzeCustomPath(folder.Path)">
+                                                            <i class="bi bi-search"></i>
+                                                        </button>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         }
@@ -98,22 +186,43 @@
                         else if (storageError != null)
                         {
                             <div class="alert alert-warning">
-                                <i class="bi bi-exclamation-triangle me-2"></i> @storageError
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-exclamation-triangle-fill fs-2 me-3 text-warning"></i>
+                                    <div>
+                                        <h6 class="mb-1">Storage Analysis Error</h6>
+                                        <p class="mb-1">@storageError</p>
+                                        <div class="mt-2">
+                                            <small>
+                                                Windows restricts access to system folders for security reasons. 
+                                                Try selecting a different drive or folder that you have permission to access.
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         }
-                        else if (selectedDrive != null)
+                        else if (selectedDrive != null || !string.IsNullOrEmpty(customPath))
                         {
                             <div class="text-center my-5">
                                 <div class="spinner-border text-primary" role="status">
                                     <span class="visually-hidden">Loading...</span>
                                 </div>
-                                <p class="mt-2">Analyzing folders on @selectedDrive.Name...</p>
+                                <p class="mt-2">
+                                    @if (selectedDrive != null)
+                                    {
+                                        <span>Analyzing folders on @selectedDrive.Name...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Analyzing folders in @GetShortPath(customPath)...</span>
+                                    }
+                                </p>
                             </div>
                         }
                         else
                         {
                             <div class="text-center my-3">
-                                <p>Click on a drive to analyze its largest folders</p>
+                                <p>Click on a drive or select a custom folder to analyze</p>
                             </div>
                         }
                     }
@@ -127,14 +236,18 @@
     private System.Threading.Timer? _timer;
     private bool isLoaded = false;
     private bool storageLoaded = false;
+    private bool showCustomPathInput = false;
+    private string customPath = "";
+    private string analyzedPath = "";
     private List<SystemStorageService.DiskInfo> disks = new();
     private SystemStorageService.DiskInfo? selectedDrive;
     private List<SystemStorageService.FolderInfo> largestFolders = new();
+    private List<string> recentDirectories = new();
     private string? storageError;
+    private const int MAX_RECENT_DIRS = 5;
     
     protected override async Task OnInitializedAsync()
     {
-        
         // Load performance data asynchronously
         await Task.Run(() => {
             isLoaded = true;
@@ -166,32 +279,212 @@
             storageError = $"Error loading storage information: {ex.Message}";
         }
     }
-    
-    private async Task SelectDrive(SystemStorageService.DiskInfo drive)
+
+    private void OpenFolder(SystemStorageService.FolderInfo folder)
     {
         try
         {
-            selectedDrive = drive;
+            if (Directory.Exists(folder.Path))
+            {
+                // Open the folder in Explorer
+                System.Diagnostics.Process.Start("explorer.exe", folder.Path);
+            }
+            else
+            {
+                storageError = $"Folder not found: {folder.Path}";
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            storageError = $"Could not open folder: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+    
+    private void SelectCustomDirectory()
+    {
+        showCustomPathInput = true;
+        if (string.IsNullOrEmpty(customPath) && selectedDrive != null)
+        {
+            customPath = selectedDrive.Name;
+        }
+    }
+    
+    private async Task AnalyzeCustomPath()
+    {
+        if (string.IsNullOrEmpty(customPath)) return;
+        
+        showCustomPathInput = false;
+        selectedDrive = null;
+        analyzedPath = customPath;
+        
+        AddToRecentDirectories(customPath);
+        
+        await AnalyzePath(customPath);
+    }
+    
+    private async Task AnalyzeCustomPath(string path)
+    {
+        customPath = path;
+        await AnalyzeCustomPath();
+    }
+    
+    private void AddToRecentDirectories(string path)
+    {
+        // Don't add if already in the list
+        if (recentDirectories.Contains(path))
+        {
+            // Move to top if exists
+            recentDirectories.Remove(path);
+            recentDirectories.Insert(0, path);
+            return;
+        }
+        
+        // Add to start of list
+        recentDirectories.Insert(0, path);
+        
+        // Limit the number of recent directories
+        if (recentDirectories.Count > MAX_RECENT_DIRS)
+        {
+            recentDirectories.RemoveAt(recentDirectories.Count - 1);
+        }
+    }
+    
+    private string GetShortPath(string path)
+    {
+        if (string.IsNullOrEmpty(path)) return path;
+        
+        // If path is too long, truncate the middle
+        if (path.Length > 40)
+        {
+            var start = path.Substring(0, 20);
+            var end = path.Substring(path.Length - 20);
+            return $"{start}...{end}";
+        }
+        
+        return path;
+    }
+    
+    private async Task AnalyzePath(string path)
+    {
+        try
+        {
             storageError = null;
             largestFolders.Clear();
             StateHasChanged();
             
-            largestFolders = await StorageService.GetLargestFoldersAsync(drive.Name, 5);
-            
-            if (!largestFolders.Any())
+            // Check if directory exists
+            if (!Directory.Exists(path))
             {
-                storageError = "No accessible folders found or drive is empty.";
+                storageError = $"Directory not found: {path}";
+                StateHasChanged();
+                return;
+            }
+            
+            // Set a timeout for folder analysis to prevent long waits
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+            
+            try
+            {
+                largestFolders = await StorageService.GetLargestFoldersAsync(path, 10);
+                
+                if (!largestFolders.Any())
+                {
+                    storageError = "No accessible folders found or directory is empty.";
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                storageError = "Analysis took too long and was canceled. Try a different folder.";
+            }
+            catch (OperationCanceledException)
+            {
+                storageError = "Analysis took too long and was canceled. Try a different folder.";
             }
         }
         catch (UnauthorizedAccessException)
         {
-            storageError = "Access denied. You may need to run the application as Administrator.";
+            storageError = "Access denied. Some folders could not be analyzed. Results may be incomplete.";
+            // Still show any folders we did manage to scan
         }
         catch (Exception ex)
         {
             storageError = $"Error analyzing folders: {ex.Message}";
         }
         StateHasChanged();
+    }
+
+    private async Task SelectFolderAndAnalyze()
+    {
+        try
+        {
+            string selectedPath = SelectFolder("Choose a folder to analyze");
+
+            if (!string.IsNullOrEmpty(selectedPath))
+            {
+                customPath = selectedPath;
+                System.Diagnostics.Debug.WriteLine($"Selected folder: {selectedPath}");
+                await AnalyzeCustomPath();
+            }
+        }
+        catch (Exception ex)
+        {
+            storageError = $"Error selecting folder: {ex.Message}";
+            System.Diagnostics.Debug.WriteLine($"Error in SelectFolderAndAnalyze: {ex}");
+            StateHasChanged();
+        }
+    }
+    
+    public string SelectFolder(string title = "Select a folder")
+    {
+        try
+        {
+            // Create a dummy file dialog
+            using (var dialog = new OpenFileDialog())
+            {
+                dialog.Title = title;
+                dialog.CheckFileExists = false;
+                dialog.CheckPathExists = true;
+                dialog.FileName = "Select Folder"; // Placeholder filename
+            
+                // This makes the dialog act like a folder picker
+                dialog.ValidateNames = false;
+                dialog.InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            
+                if (dialog.ShowDialog() == DialogResult.OK)
+                {
+                    // Return the directory path, not the file
+                    return Path.GetDirectoryName(dialog.FileName);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error selecting folder: {ex.Message}");
+        }
+    
+        return string.Empty;
+    }
+
+    private async Task SelectDrive(SystemStorageService.DiskInfo drive)
+    {
+        try
+        {
+            selectedDrive = drive;
+            customPath = "";
+            analyzedPath = drive.Name;
+            storageError = null;
+            largestFolders.Clear();
+            StateHasChanged();
+            
+            await AnalyzePath(drive.Name);
+        }
+        catch (Exception ex)
+        {
+            storageError = $"Error selecting drive: {ex.Message}";
+            StateHasChanged();
+        }
     }
     
     public void Dispose()

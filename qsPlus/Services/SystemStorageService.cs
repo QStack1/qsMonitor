@@ -63,7 +63,17 @@ namespace qsPlus.Services
             try
             {
                 // Get top-level directories only
-                var directories = Directory.GetDirectories(path);
+                var directories = new List<string>();
+                try 
+                {
+                    directories = Directory.GetDirectories(path).ToList();
+                }
+                catch (UnauthorizedAccessException)
+                {
+                    // If we can't list the root directory, just return empty result
+                    return result;
+                }
+                
                 var folderSizes = new List<FolderInfo>();
                 
                 // Calculate size for each directory
@@ -71,6 +81,12 @@ namespace qsPlus.Services
                 {
                     try
                     {
+                        // Skip known protected system folders
+                        if (ShouldSkipFolder(dir))
+                        {
+                            continue;
+                        }
+                        
                         var size = await Task.Run(() => CalculateFolderSize(dir));
                         folderSizes.Add(new FolderInfo 
                         { 
@@ -112,7 +128,48 @@ namespace qsPlus.Services
             
             return result;
         }
-        
+
+        private bool ShouldSkipFolder(string folderPath)
+        {
+            // List of known protected or system folders that should be skipped
+            string[] knownProtectedFolders = new[]
+            {
+                "Config.Msi",
+                "System Volume Information",
+                "$RECYCLE.BIN",
+                "$Recycle.Bin",
+                "WindowsApps",
+                "Documents and Settings",
+                "ProgramData",
+                "Recovery",
+                "Boot",
+                "$Windows.~BT",
+                "$Windows.~WS",
+                "Windows.old"
+            };
+            
+            string folderName = Path.GetFileName(folderPath);
+            
+            // Also skip hidden or system folders
+            try
+            {
+                var attr = File.GetAttributes(folderPath);
+                if ((attr & FileAttributes.Hidden) == FileAttributes.Hidden ||
+                    (attr & FileAttributes.System) == FileAttributes.System)
+                {
+                    return true;
+                }
+            }
+            catch
+            {
+                // If we can't get attributes, better to skip
+                return true;
+            }
+            
+            // Skip folders from our known list
+            return knownProtectedFolders.Contains(folderName);
+        }
+
         private long CalculateFolderSize(string folderPath)
         {
             long size = 0;
@@ -140,6 +197,11 @@ namespace qsPlus.Services
                 {
                     try
                     {
+                        // Skip known protected folders in subdirectories too
+                        if (ShouldSkipFolder(dir))
+                        {
+                            continue;
+                        }
                         size += CalculateFolderSize(dir);
                     }
                     catch

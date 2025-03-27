@@ -94,13 +94,29 @@
     height: 3rem;
 }
 
-/* Add these styles for the refresh indicator */
-/* .card-header-custom {
-    position: relative;
+.collapsible-header {
+    cursor: pointer;
+    transition: background-color 0.3s;
 }
 
-.spinner-border-sm {
-    width: 1rem;
-    height: 1rem;
-    border-width: 0.15em;
-} */
+.collapsible-header:hover {
+    filter: brightness(110%);
+}
+
+.card-header i {
+    transition: transform 0.3s ease;
+}
+
+.card {
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+/* Animation for collapsing/expanding */
+.card-body {
+    transition: all 0.3s ease;
+}

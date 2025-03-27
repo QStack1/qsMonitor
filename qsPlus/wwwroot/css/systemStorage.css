@@ -61,3 +61,81 @@
 .performance-item.disk-card.selected {
     border: 2px solid #4285f4;
 }
+
+/* Add these styles to make disk cards interactive */
+.disk-card {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.disk-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+}
+
+.disk-card.selected {
+    border: 2px solid var(--bs-primary);
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+}
+
+.disk-card.selected::after {
+    content: "✓";
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    background-color: var(--bs-primary);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Add these styles for clickable table rows */
+.table-hover tbody tr {
+    transition: background-color 0.2s;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.08);
+}
+
+.table-hover tbody tr:active {
+    background-color: rgba(var(--bs-primary-rgb), 0.15);
+}
+
+/* Add these styles for clickable chart segments */
+.chart-segment {
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+}
+
+.chart-segment:hover {
+    transform: scaleY(1.1);
+    filter: brightness(1.1);
+}
+
+.chart-segment:active {
+    transform: scaleY(1.05);
+}
+
+.chart-segment::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0);
+    transition: background-color 0.2s;
+}
+
+.chart-segment:hover::after {
+    background-color: rgba(255, 255, 255, 0.1);
+}

@@ -2,18 +2,11 @@
 @using qsPlus.Components.MonitorCardComponents
 @inject SystemPerformanceService PerformanceService
 @implements IDisposable
-
-<link href="css/performance.css" rel="stylesheet" />
     
-<div class="row row-cols-1 row-cols-md-1 g-4 mb-5">
+<div class="row row-cols-1 g-4">
     <div class="col">
         <div class="card performance-card h-100">
-            <div class="card-header-custom">
-                <div class="icon-container icon-pulse">
-                    <i class="bi bi-activity fs-1 text-white"></i>
-                </div>
-                <h4 class="card-title text-center mb-0">System Metrics</h4>
-            </div>
+            @* <h4 class="card-title text-center mb-0">System Metrics</h4> *@
             
             <div class="card-body p-4">
                 @if (!isLoaded)
@@ -66,6 +59,12 @@
                                     <div class="progress" style="width: @(100 - (availableRam / totalRam * 100))%"></div>
                                 </div>
                             </div>
+
+                            <div class="d-flex justify-content-end mt-3">
+                                <button class="btn btn-sm btn-primary rounded-pill shadow-sm" @onclick="ManualRefresh">
+                                    <i class="bi bi-arrow-repeat me-1"></i> Refresh
+                                </button>
+                            </div>
                         </div>
 
                         @if (lastError != null)
@@ -74,9 +73,6 @@
                                 <div class="alert alert-warning">
                                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
                                     @lastError
-                                    <button type="button" class="btn btn-sm btn-outline-primary ms-3" @onclick="RefreshData">
-                                        <i class="bi bi-arrow-clockwise me-1"></i> Retry
-                                    </button>
                                 </div>
                             </div>
                         }
@@ -95,124 +91,88 @@
     private bool isLoaded = false;
     private string? lastError = null;
     private int failedAttempts = 0;
-    private static readonly SemaphoreSlim _updateLock = new SemaphoreSlim(1, 1);
+    private bool _isMounted = false;
     
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
+        // Get static data synchronously
         try
         {
-            // Get total RAM first (static value)
             totalRam = PerformanceService.GetTotalRamInMB();
-            
-            // Initial data load
-            await RefreshData();
-            
-            // Start periodic updates with a longer period than usual
-            _timer = new System.Threading.Timer(
-                async _ => await UpdateTimerCallback(),
-                null,
-                TimeSpan.FromSeconds(1), // Start after 1 second
-                TimeSpan.FromSeconds(3)  // Then every 3 seconds
-            );
         }
         catch (Exception ex)
         {
-            lastError = $"Failed to initialize performance metrics: {ex.Message}";
-            isLoaded = true; // Still mark as loaded to show the error
+            lastError = $"Error getting total RAM: {ex.Message}";
+            totalRam = 8192; // fallback
         }
     }
     
-    private async Task RefreshData()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender)
+        {
+            _isMounted = true;
+            await UpdateDataSafely();
+            
+            // Setup timer only after first successful update
+            _timer = new System.Threading.Timer(_ => 
+            {
+                InvokeAsync(UpdateDataSafely);
+            }, null, TimeSpan.FromSeconds(3), TimeSpan.FromSeconds(5));
+        }
+    }
+    
+    private async Task ManualRefresh()
+    {
+        await UpdateDataSafely();
+    }
+    
+    private async Task UpdateDataSafely()
+    {
+        if (!_isMounted) return;
+        
         try
         {
             lastError = null;
             
-            // For the first load, use a Task.Run to avoid blocking UI
-            if (!isLoaded)
+            // Update CPU data
+            try 
             {
-                await Task.Run(() => {
-                    UpdatePerformanceData();
-                });
-                isLoaded = true;
+                cpuUsage = PerformanceService.GetCpuUsage();
             }
-            else
+            catch (Exception ex)
             {
-                UpdatePerformanceData();
+                lastError = $"CPU data error: {ex.Message}";
             }
             
+            // Update RAM data
+            try 
+            {
+                availableRam = PerformanceService.GetAvailableRamInMB();
+            }
+            catch (Exception ex)
+            {
+                if (lastError == null)
+                    lastError = $"RAM data error: {ex.Message}";
+            }
+            
+            if (!isLoaded)
+                isLoaded = true;
+                
             failedAttempts = 0;
-            await InvokeAsync(StateHasChanged);
-        }
-        catch (Exception ex)
-        {
-            lastError = $"Error updating performance data: {ex.Message}";
-            await InvokeAsync(StateHasChanged);
-        }
-    }
-    
-    private async Task UpdateTimerCallback()
-    {
-        // Use a semaphore to prevent overlapping updates
-        if (!await _updateLock.WaitAsync(0))
-        {
-            return; // If an update is already in progress, just skip this one
-        }
-        
-        try
-        {
-            await RefreshData();
         }
         catch (Exception ex)
         {
             failedAttempts++;
-            
-            if (failedAttempts > 3)
-            {
-                lastError = $"Multiple errors updating data: {ex.Message}";
-                await InvokeAsync(StateHasChanged);
-            }
-            
-            // If we've had too many failures, slow down the polling
-            if (failedAttempts > 5 && _timer != null)
-            {
-                _timer.Change(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
-            }
-        }
-        finally
-        {
-            _updateLock.Release();
-        }
-    }
-    
-    private void UpdatePerformanceData()
-    {
-        // We'll enqueue these separately in case one fails
-        try
-        {
-            cpuUsage = PerformanceService.GetCpuUsage();
-        }
-        catch (Exception ex)
-        {
-            lastError = $"Failed to get CPU usage: {ex.Message}";
+            lastError = $"Update error: {ex.Message}";
         }
         
-        try
-        {
-            availableRam = PerformanceService.GetAvailableRamInMB();
-        }
-        catch (Exception ex)
-        {
-            if (lastError == null) // Only overwrite if no CPU error
-            {
-                lastError = $"Failed to get RAM usage: {ex.Message}";
-            }
-        }
+        await InvokeAsync(StateHasChanged);
     }
     
     public void Dispose()
     {
+        _isMounted = false;
         _timer?.Dispose();
-        _updateLock.Dispose();
     }
 }
