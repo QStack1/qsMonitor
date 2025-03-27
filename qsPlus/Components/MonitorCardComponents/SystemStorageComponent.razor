@@ -7,6 +7,9 @@
 @using System.IO
 @using System.Diagnostics
 
+<!-- Add this near the top of your file -->
+<link rel="stylesheet" href="css/systemStorage.css" />
+
 <div class="container py-4">
     <div class="row row-cols-1 row-cols-md-1 g-4 mb-5">
         <div class="col">
@@ -30,28 +33,22 @@
                                 <i class="bi bi-folder-plus me-1"></i> Analyze Custom Folder
                             </button>
                         </div>
-                        
+
                         <div class="row mb-4">
                             @foreach (var disk in disks)
                             {
                                 <div class="col-md-6 mb-3">
-                                    <div class="performance-item @(disk.UsagePercent > 90 ? "critical" : disk.UsagePercent > 75 ? "warning" : "") 
-                                            @(selectedDrive?.Name == disk.Name ? "selected" : "") 
-                                            disk-card" 
-                                        @onclick="() => SelectDrive(disk)">
+                                    <div class="@(disk.UsagePercent > 90 ? "critical" : disk.UsagePercent > 75 ? "warning" : "") 
+                                            @(selectedDrive?.Name == disk.Name ? "selected" : "")">
                                         <div class="d-flex justify-content-between">
                                             <span class="label">@disk.Name (@disk.Type)</span>
                                             <span class="badge @(disk.UsagePercent > 90 ? "bg-danger" : disk.UsagePercent > 75 ? "bg-warning" : "bg-success")">
                                                 @disk.UsagePercent%
                                             </span>
                                         </div>
-                                        <span class="value">@disk.FreeSpaceFormatted free of @disk.TotalSizeFormatted</span>
+                                        <div class="theme-text">@disk.FreeSpaceFormatted free of @disk.TotalSizeFormatted</div>
                                         <div class="progress-bar">
                                             <div class="progress" style="width: @disk.UsagePercent%"></div>
-                                        </div>
-                                        
-                                        <div class="mt-1 text-end">
-                                            <small class="text-muted"><i class="bi bi-search"></i> Analyze</small>
                                         </div>
                                     </div>
                                 </div>
@@ -61,7 +58,8 @@
                         <!-- Custom Path Input (shown when custom analysis is requested) -->
                         @if (showCustomPathInput)
                         {
-                            <div class="card mb-4 bg-light">
+                            <!-- Replace the custom path input card div -->
+                            <div class="card mb-4 theme-card">
                                 <div class="card-body">
                                     <h6 class="mb-3">Analyze Custom Folder</h6>
                                     <div class="input-group mb-3">
@@ -142,13 +140,13 @@
                             </div>
                             
                             <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead>
+                                <table class="table table-hover theme-table">
+                                    <thead class="table-header">
                                         <tr>
-                                            <th>Folder</th>
-                                            <th>Size</th>
-                                            <th>% of Total</th>
-                                            <th></th>
+                                            <th scope="col">Folder</th>
+                                            <th scope="col">Size</th>
+                                            <th scope="col">% of Total</th>
+                                            <th scope="col"></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -156,15 +154,15 @@
                                         {
                                             <tr>
                                                 <td title="@folder.Path">
-                                                    <i class="bi bi-folder me-1"></i> @folder.Name
+                                                    <i class="bi bi-folder me-1"></i> <span class="folder-name">@folder.Name</span>
                                                 </td>
-                                                <td>@folder.SizeFormatted</td>
+                                                <td class="folder-size">@folder.SizeFormatted</td>
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <div class="progress-bar" style="width: 100px">
                                                             <div class="progress" style="width: @folder.Percentage%"></div>
                                                         </div>
-                                                        <span class="ms-2">@folder.Percentage%</span>
+                                                        <span class="ms-2 percentage-value">@folder.Percentage%</span>
                                                     </div>
                                                 </td>
                                                 <td>
@@ -182,6 +180,110 @@
                                     </tbody>
                                 </table>
                             </div>
+
+                            <!-- Add this section after your folder analysis table -->
+                            @* @if (fileTypeAnalysis.Any()) *@
+                            @* { *@
+                            @*     <div class="mt-4"> *@
+                            @*         <h5 class="mb-3">File Types in @GetShortPath(analyzedPath)</h5> *@
+                            @*         <div class="row"> *@
+                            @*             <div class="col-md-7"> *@
+                            @*                 <div class="table-responsive"> *@
+                            @*                     <table class="table table-hover theme-table"> *@
+                            @*                         <thead class="table-header"> *@
+                            @*                             <tr> *@
+                            @*                                 <th scope="col">File Type</th> *@
+                            @*                                 <th scope="col">Count</th> *@
+                            @*                                 <th scope="col">Size</th> *@
+                            @*                                 <th scope="col">% of Total</th> *@
+                            @*                             </tr> *@
+                            @*                         </thead> *@
+                            @*                         <tbody> *@
+                            @*                             @foreach (var type in fileTypeAnalysis) *@
+                            @*                             { *@
+                            @*                                 <tr> *@
+                            @*                                     <td> *@
+                            @*                                         <div class="d-flex align-items-center"> *@
+                            @*                                             <span class="file-type-icon me-2" style="background-color: @type.Color"> *@
+                            @*                                                 @type.Extension.TrimStart('.') *@
+                            @*                                             </span> *@
+                            @*                                             <span>@(string.IsNullOrEmpty(type.Description) ? type.Extension : type.Description)</span> *@
+                            @*                                         </div> *@
+                            @*                                     </td> *@
+                            @*                                     <td>@type.Count.ToString("N0")</td> *@
+                            @*                                     <td>@type.SizeFormatted</td> *@
+                            @*                                     <td> *@
+                            @*                                         <div class="d-flex align-items-center"> *@
+                            @*                                             <div class="progress-bar" style="width: 100px"> *@
+                            @*                                                 <div class="progress" style="width: @type.Percentage%; background-color: @type.Color"></div> *@
+                            @*                                             </div> *@
+                            @*                                             <span class="ms-2 percentage-value">@type.Percentage%</span> *@
+                            @*                                         </div> *@
+                            @*                                     </td> *@
+                            @*                                 </tr> *@
+                            @*                             } *@
+                            @*                         </tbody> *@
+                            @*                     </table> *@
+                            @*                 </div> *@
+                            @*             </div> *@
+                            @*             <div class="col-md-5"> *@
+                            @*                 <div class="file-type-chart"> *@
+                            @*                     <canvas id="fileTypeChart" width="300" height="300"></canvas> *@
+                            @*                 </div> *@
+                            @*             </div> *@
+                            @*         </div> *@
+                            @*     </div> *@
+                            @* } *@
+                            <!-- Add this section for file age analysis -->
+                            @if (fileAgeAnalysis.Any())
+                            {
+                                <div class="mt-4">
+                                    <h5 class="mb-3">File Age Analysis</h5>
+                                    <div class="row">
+                                        <div class="col-md-7">
+                                            <div class="table-responsive">
+                                                <table class="table table-hover theme-table">
+                                                    <thead class="table-header">
+                                                        <tr>
+                                                            <th scope="col">Time Period</th>
+                                                            <th scope="col">Count</th>
+                                                            <th scope="col">Size</th>
+                                                            <th scope="col">% of Total</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var age in fileAgeAnalysis)
+                                                        {
+                                                            <tr>
+                                                                <td>@age.Description</td>
+                                                                <td>@age.Count.ToString("N0")</td>
+                                                                <td>@age.SizeFormatted</td>
+                                                                <td>
+                                                                    <div class="d-flex align-items-center">
+                                                                        <div class="progress-bar" style="width: 100px">
+                                                                            <div class="progress" style="width: @age.Percentage%"></div>
+                                                                        </div>
+                                                                        <span class="ms-2 percentage-value">@age.Percentage%</span>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-5">
+                                            <div class="storage-item p-3">
+                                                <h6>Files by Age</h6>
+                                                <p class="text-muted small">Understanding when files were created can help identify old data that might be archived or deleted.</p>
+                                                <button class="btn btn-sm btn-outline-primary mt-2" @onclick="AnalyzeOldFiles">
+                                                    <i class="bi bi-clock-history me-1"></i> Find Files Older Than 1 Year
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
                         }
                         else if (storageError != null)
                         {
@@ -245,6 +347,10 @@
     private List<string> recentDirectories = new();
     private string? storageError;
     private const int MAX_RECENT_DIRS = 5;
+    private List<FileAgeInfo> fileAgeAnalysis = new();
+    // private List<FileTypeInfo> fileTypeAnalysis = new();
+    private bool isAnalyzingOldFiles = false;
+    private List<FileInfo> oldFiles = new();
     
     protected override async Task OnInitializedAsync()
     {
@@ -372,6 +478,8 @@
         {
             storageError = null;
             largestFolders.Clear();
+            fileAgeAnalysis.Clear();
+            // fileTypeAnalysis.Clear();
             StateHasChanged();
             
             // Check if directory exists
@@ -387,7 +495,11 @@
             
             try
             {
+                // Get largest folders (your existing code)
                 largestFolders = await StorageService.GetLargestFoldersAsync(path, 10);
+                
+                // Now also analyze file ages
+                await AnalyzeFileAges();
                 
                 if (!largestFolders.Any())
                 {
@@ -484,6 +596,228 @@
         {
             storageError = $"Error selecting drive: {ex.Message}";
             StateHasChanged();
+        }
+    }
+    
+    private async Task AnalyzeOldFiles()
+    {
+        if (string.IsNullOrEmpty(analyzedPath)) return;
+        
+        try
+        {
+            isAnalyzingOldFiles = true;
+            oldFiles.Clear();
+            StateHasChanged();
+            
+            // Get the date one year ago
+            DateTime oneYearAgo = DateTime.Now.AddYears(-1);
+            
+            // Create a List to store old files
+            var files = new List<FileInfo>();
+            
+            await Task.Run(() => {
+                // You might need to implement this method in your StorageService
+                // or use the code below as an alternative
+                oldFiles = FindFilesOlderThan(analyzedPath, oneYearAgo);
+            });
+            
+            // Sort by size to find largest old files
+            oldFiles = oldFiles.OrderByDescending(f => f.Length).Take(100).ToList();
+            
+        }
+        catch (Exception ex)
+        {
+            storageError = $"Error analyzing old files: {ex.Message}";
+        }
+        finally
+        {
+            isAnalyzingOldFiles = false;
+            StateHasChanged();
+        }
+    }
+    
+    // Helper method to find files older than a specific date
+    private List<FileInfo> FindFilesOlderThan(string path, DateTime date)
+    {
+        var result = new List<FileInfo>();
+        try
+        {
+            // Use a stack for a non-recursive directory traversal
+            var directories = new Stack<string>();
+            directories.Push(path);
+            
+            while (directories.Count > 0)
+            {
+                string currentDir = directories.Pop();
+                
+                // Process files in current directory
+                try
+                {
+                    foreach (var file in Directory.GetFiles(currentDir))
+                    {
+                        try
+                        {
+                            var fileInfo = new FileInfo(file);
+                            // Check if the file is older than the specified date
+                            if (fileInfo.CreationTime < date || fileInfo.LastWriteTime < date)
+                            {
+                                result.Add(fileInfo);
+                            }
+                        }
+                        catch (UnauthorizedAccessException) { /* Skip inaccessible files */ }
+                        catch (Exception) { /* Skip problematic files */ }
+                    }
+                }
+                catch (UnauthorizedAccessException) { /* Skip inaccessible directories */ }
+                catch (Exception) { /* Skip problematic directories */ }
+                
+                // Add subdirectories to the stack
+                try
+                {
+                    foreach (var dir in Directory.GetDirectories(currentDir))
+                    {
+                        directories.Push(dir);
+                    }
+                }
+                catch (UnauthorizedAccessException) { /* Skip inaccessible directories */ }
+                catch (Exception) { /* Skip problematic directories */ }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"Error finding old files: {ex.Message}");
+        }
+        
+        return result;
+    }
+    
+    // You should also add this method to populate the fileAgeAnalysis list
+    private async Task AnalyzeFileAges()
+    {
+        if (string.IsNullOrEmpty(analyzedPath)) return;
+        
+        try
+        {
+            fileAgeAnalysis.Clear();
+            
+            // Define age categories
+            var categories = new List<(string Description, TimeSpan Age)>
+            {
+                ("Last 24 hours", TimeSpan.FromDays(1)),
+                ("Last week", TimeSpan.FromDays(7)),
+                ("Last month", TimeSpan.FromDays(30)),
+                ("Last 3 months", TimeSpan.FromDays(90)),
+                ("Last year", TimeSpan.FromDays(365)),
+                ("Older than a year", TimeSpan.MaxValue)
+            };
+            
+            // Initialize counters for each category
+            var categoryData = categories.Select(c => new FileAgeInfo { 
+                Description = c.Description,
+                Size = 0,
+                Count = 0,
+                Percentage = 0
+            }).ToList();
+            
+            long totalSize = 0;
+            
+            // This would be much better implemented in your StorageService
+            await Task.Run(() => {
+                // Use a stack for a non-recursive directory traversal
+                var directories = new Stack<string>();
+                directories.Push(analyzedPath);
+                
+                while (directories.Count > 0)
+                {
+                    string currentDir = directories.Pop();
+                    
+                    // Process files in current directory
+                    try
+                    {
+                        foreach (var file in Directory.GetFiles(currentDir))
+                        {
+                            try
+                            {
+                                var fileInfo = new FileInfo(file);
+                                var fileAge = DateTime.Now - fileInfo.LastWriteTime;
+                                
+                                // Find the appropriate category
+                                for (int i = 0; i < categories.Count; i++)
+                                {
+                                    if (fileAge <= categories[i].Age)
+                                    {
+                                        categoryData[i].Size += fileInfo.Length;
+                                        categoryData[i].Count++;
+                                        totalSize += fileInfo.Length;
+                                        break;
+                                    }
+                                }
+                            }
+                            catch (UnauthorizedAccessException) { /* Skip inaccessible files */ }
+                            catch (Exception) { /* Skip problematic files */ }
+                        }
+                    }
+                    catch (UnauthorizedAccessException) { /* Skip inaccessible directories */ }
+                    catch (Exception) { /* Skip problematic directories */ }
+                    
+                    // Add subdirectories to the stack
+                    try
+                    {
+                        foreach (var dir in Directory.GetDirectories(currentDir))
+                        {
+                            directories.Push(dir);
+                        }
+                    }
+                    catch (UnauthorizedAccessException) { /* Skip inaccessible directories */ }
+                    catch (Exception) { /* Skip problematic directories */ }
+                }
+            });
+            
+            // Calculate percentages
+            if (totalSize > 0)
+            {
+                foreach (var category in categoryData)
+                {
+                    category.Percentage = Math.Round((double)category.Size / totalSize * 100, 1);
+                }
+            }
+            
+            // Filter out empty categories and add to the analysis result
+            fileAgeAnalysis = categoryData.Where(c => c.Count > 0).ToList();
+        }
+        catch (Exception ex)
+        {
+            storageError = $"Error analyzing file ages: {ex.Message}";
+        }
+        
+        StateHasChanged();
+    }
+    
+    // Add this class definition inside your @code block
+    private class FileAgeInfo
+    {
+        public string Description { get; set; } = "";
+        public long Size { get; set; }
+        public int Count { get; set; }
+        public double Percentage { get; set; }
+        
+        // Use a property that calculates the formatted size instead of calling the service
+        public string SizeFormatted => FormatSize(Size);
+        
+        // Private helper method to format file sizes
+        private string FormatSize(long bytes)
+        {
+            string[] suffixes = { "B", "KB", "MB", "GB", "TB", "PB" };
+            int counter = 0;
+            decimal number = bytes;
+            
+            while (Math.Round(number / 1024) >= 1)
+            {
+                number /= 1024;
+                counter++;
+            }
+            
+            return $"{number:n1} {suffixes[counter]}";
         }
     }
     

@@ -1,68 +1,64 @@
-.storage-chart {
-    margin: 1rem 0;
+/* =============================================
+   THEME VARIABLES & ROOT SETTINGS
+   ============================================= */
+:root {
+    --chart-hover-overlay: rgba(255, 255, 255, 0.1);
+    --chart-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
+    --hover-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    --text-primary: var(--bs-body-color, #212529);
+    --text-secondary: var(--bs-secondary-color, #6c757d);
+    --bg-card: var(--bs-card-bg, #fff);
+    --bg-item: var(--bs-tertiary-bg, #f8f9fa);
+    --bg-item-hover: var(--bs-secondary-bg, #e9ecef);
+    --border-color: var(--bs-border-color, rgba(0,0,0,.125));
 }
 
-.chart-container {
-    display: flex;
-    height: 30px;
-    border-radius: 4px;
-    overflow: hidden;
+[data-bs-theme="dark"] {
+    --chart-hover-overlay: rgba(255, 255, 255, 0.2);
+    --chart-shadow: 0 0 3px rgba(0, 0, 0, 0.7);
+    --hover-shadow: 0 5px 10px rgba(0, 0, 0, 0.3);
+    --text-primary: var(--bs-body-color, #f8f9fa);
+    --text-secondary: var(--bs-secondary-color, #adb5bd);
+    --bg-card: var(--bs-card-bg, #212529);
+    --bg-item: var(--bs-tertiary-bg, #343a40);
+    --bg-item-hover: var(--bs-secondary-bg, #495057);
+    --border-color: var(--bs-border-color, rgba(255,255,255,.125));
 }
 
-.chart-segment {
-    height: 100%;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-size: 0.8rem;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s ease;
+/* =============================================
+   CARD COMPONENTS
+   ============================================= */
+.performance-card {
+    background-color: var(--bg-card);
+    border-color: var(--border-color);
+    transition: all 0.3s ease;
 }
 
-.chart-segment:nth-child(1) { background-color: #4285f4; }
-.chart-segment:nth-child(2) { background-color: #34a853; }
-.chart-segment:nth-child(3) { background-color: #fbbc05; }
-.chart-segment:nth-child(4) { background-color: #ea4335; }
-.chart-segment:nth-child(5) { background-color: #673ab7; }
-
-.chart-segment:hover {
-    opacity: 0.8;
-    transform: scaleY(1.1);
+/* =============================================
+   STORAGE ITEM / DISK COMPONENTS
+   ============================================= */
+.performance-item {
+    padding: 1rem;
+    border-radius: var(--bs-border-radius, 0.375rem);
+    background-color: var(--bg-item);
+    border: 1px solid var(--border-color);
+    margin-bottom: 1rem;
 }
 
-.segment-label {
-    position: relative;
-    z-index: 2;
-    text-shadow: 0 0 3px rgba(0,0,0,0.5);
+.performance-item .label {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
 }
 
-.table-hover tbody tr {
-    cursor: pointer;
+.performance-item .value, 
+.percentage-value {
+    color: var(--text-primary);
+    font-weight: 500;
 }
 
-.table-hover tbody tr:hover {
-    background-color: rgba(66, 133, 244, 0.1);
-}
-
-/* Make disk cards clickable */
-.performance-item.disk-card {
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.performance-item.disk-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 5px 10px rgba(0,0,0,0.1);
-}
-
-.performance-item.disk-card.selected {
-    border: 2px solid #4285f4;
-}
-
-/* Add these styles to make disk cards interactive */
+/* =============================================
+   CLICKABLE DISK CARDS
+   ============================================= */
 .disk-card {
     cursor: pointer;
     transition: all 0.2s ease;
@@ -71,7 +67,8 @@
 
 .disk-card:hover {
     transform: translateY(-3px);
-    box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+    box-shadow: var(--hover-shadow);
+    background-color: var(--bg-item-hover);
 }
 
 .disk-card.selected {
@@ -96,29 +93,76 @@
     font-weight: bold;
 }
 
-/* Add these styles for clickable table rows */
-.table-hover tbody tr {
-    transition: background-color 0.2s;
+/* =============================================
+   PROGRESS INDICATORS
+   ============================================= */
+.progress-bar {
+    background-color: var(--bg-item);
+    border-radius: 6px;
+    overflow: hidden;
+    height: 12px;
+    margin-top: 0.5rem;
 }
 
-.table-hover tbody tr:hover {
-    background-color: rgba(var(--bs-primary-rgb), 0.08);
+.progress {
+    background-color: var(--bs-primary);
+    height: 100%;
 }
 
-.table-hover tbody tr:active {
-    background-color: rgba(var(--bs-primary-rgb), 0.15);
+.critical .progress {
+    background-color: var(--bs-danger);
 }
 
-/* Add these styles for clickable chart segments */
+.warning .progress {
+    background-color: var(--bs-warning);
+}
+
+/* =============================================
+   CHART COMPONENTS
+   ============================================= */
+.storage-chart {
+    margin: 1rem 0;
+    background-color: var(--bg-item);
+    border-radius: var(--bs-border-radius);
+    padding: 1rem;
+}
+
+.chart-container {
+    display: flex;
+    height: 30px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
 .chart-segment {
-    cursor: pointer;
-    transition: all 0.2s;
+    height: 100%;
     position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
 }
+
+/* Chart segment colors */
+.chart-segment:nth-child(1) { background-color: var(--bs-primary, #4285f4); }
+.chart-segment:nth-child(2) { background-color: var(--bs-success, #34a853); }
+.chart-segment:nth-child(3) { background-color: var(--bs-warning, #fbbc05); }
+.chart-segment:nth-child(4) { background-color: var(--bs-danger, #ea4335); }
+.chart-segment:nth-child(5) { background-color: var(--bs-indigo, #673ab7); }
+.chart-segment:nth-child(6) { background-color: var(--bs-purple, #9c27b0); }
+.chart-segment:nth-child(7) { background-color: var(--bs-pink, #e91e63); }
+.chart-segment:nth-child(8) { background-color: var(--bs-orange, #ff9800); }
+.chart-segment:nth-child(9) { background-color: var(--bs-teal, #009688); }
+.chart-segment:nth-child(10) { background-color: var(--bs-cyan, #00bcd4); }
 
 .chart-segment:hover {
+    filter: brightness(1.2);
     transform: scaleY(1.1);
-    filter: brightness(1.1);
 }
 
 .chart-segment:active {
@@ -132,10 +176,447 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(255, 255, 255, 0);
+    background-color: transparent;
     transition: background-color 0.2s;
 }
 
 .chart-segment:hover::after {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--chart-hover-overlay);
+}
+
+.segment-label {
+    position: relative;
+    z-index: 2;
+    text-shadow: var(--chart-shadow);
+}
+
+/* =============================================
+   TABLE COMPONENTS
+   ============================================= */
+.table {
+    color: var(--text-primary);
+}
+
+.table th {
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+}
+
+.table td {
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+}
+
+.table-hover tbody tr {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.08);
+}
+
+.table-hover tbody tr:active {
+    background-color: rgba(var(--bs-primary-rgb), 0.15);
+}
+
+/* Table buttons */
+.table .btn-outline-primary {
+    color: var(--bs-primary);
+    border-color: var(--bs-primary);
+}
+
+.table .btn-outline-primary:hover {
+    color: var(--bs-white);
+    background-color: var(--bs-primary);
+}
+
+.table .btn-outline-secondary {
+    color: var(--bs-secondary);
+    border-color: var(--bs-secondary);
+}
+
+.table .btn-outline-secondary:hover {
+    color: var(--bs-white);
+    background-color: var(--bs-secondary);
+}
+
+/* Table text */
+.table span:not(.badge),
+.table small,
+.table .text-muted {
+    color: var(--text-primary);
+}
+
+.table .badge {
+    color: var(--bs-white);
+}
+
+.table .bi {
+    color: currentColor;
+}
+
+/* Table styles for theme compatibility */
+.table,
+.theme-table {
+    color: var(--bs-body-color, #212529);
+}
+
+.table th,
+.theme-table th {
+    color: var(--bs-secondary-color, #6c757d);
+}
+
+.table td,
+.theme-table td,
+.table td span:not(.badge),
+.theme-table td span:not(.badge) {
+    color: var(--bs-body-color, #212529) !important;
+}
+
+[data-bs-theme="dark"] .table,
+[data-bs-theme="dark"] .theme-table {
+    color: var(--bs-body-color, #e9ecef);
+}
+
+[data-bs-theme="dark"] .table th,
+[data-bs-theme="dark"] .theme-table th {
+    color: var(--bs-secondary-color, #adb5bd);
+}
+
+[data-bs-theme="dark"] .table td,
+[data-bs-theme="dark"] .theme-table td,
+[data-bs-theme="dark"] .table td span:not(.badge),
+[data-bs-theme="dark"] .theme-table td span:not(.badge) {
+    color: var(--bs-body-color, #e9ecef) !important;
+}
+
+/* =============================================
+   FORM COMPONENTS
+   ============================================= */
+.form-control {
+    background-color: var(--bs-body-bg);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.form-control:focus {
+    background-color: var(--bs-body-bg);
+    color: var(--text-primary);
+}
+
+.form-text small {
+    color: var(--text-secondary);
+}
+
+/* =============================================
+   CUSTOM COMPONENTS
+   ============================================= */
+.theme-card {
+    background-color: var(--bg-item);
+    border-color: var(--border-color);
+}
+
+.btn-link {
+    color: var(--bs-link-color);
+}
+
+.text-muted {
+    color: var(--text-secondary) !important;
+}
+
+.alert-warning {
+    color: var(--bs-warning-text-emphasis);
+    background-color: var(--bs-warning-bg-subtle);
+    border-color: var(--bs-warning-border-subtle);
+}
+
+/* =============================================
+   MEDIA QUERIES
+   ============================================= */
+@media (max-width: 768px) {
+    .chart-segment {
+        font-size: 0.7rem;
+    }
+    
+    .storage-chart {
+        padding: 0.75rem;
+    }
+    
+    .performance-item {
+        padding: 0.75rem;
+    }
+}
+
+/* Add these high-priority overrides to the end of your file */
+
+/* Force all value text to respect theme */
+.value, 
+.value.percentage-value, 
+span.value, 
+.performance-item .value, 
+.performance-item span.value.percentage-value {
+    color: var(--bs-body-color) !important;
+}
+
+/* Explicit dark mode fixes with highest priority */
+[data-bs-theme="dark"] .value,
+[data-bs-theme="dark"] .value.percentage-value,
+[data-bs-theme="dark"] span.value,
+[data-bs-theme="dark"] .performance-item .value,
+[data-bs-theme="dark"] .performance-item span.value.percentage-value {
+    color: var(--bs-body-color) !important;
+}
+
+/* Force all label text to respect theme */
+.label, 
+.performance-item .label {
+    color: var(--bs-secondary-color) !important;
+}
+
+/* Override specificity for table cells */
+.table tbody tr td, 
+.table tbody tr td span:not(.badge) {
+    color: var(--bs-body-color) !important;
+}
+
+/* Fix any parent container that might be overriding color inheritance */
+.performance-card,
+.performance-card .card-body,
+.performance-item,
+.performance-item * {
+    color-scheme: light dark;
+}
+
+/* Last resort override for dark mode */
+@media (prefers-color-scheme: dark) {
+    .value, .percentage-value, .performance-item .value {
+        color: rgba(255, 255, 255, 0.87) !important;
+    }
+}
+
+[data-bs-theme="dark"] .value,
+[data-bs-theme="dark"] .percentage-value,
+[data-bs-theme="dark"] .performance-item .value {
+    color: rgba(255, 255, 255, 0.87) !important;
+}
+
+/* =============================================
+   DISK CARDS - DARK MODE COMPATIBLE
+   ============================================= */
+   .storage-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    background-color: var(--bs-tertiary-bg, #f8f9fa);
+    border: 1px solid var(--bs-border-color, rgba(0,0,0,.125));
+    border-radius: var(--bs-border-radius, 0.375rem);
+    transition: all 0.2s ease;
+}
+
+.storage-item.disk-card {
+    cursor: pointer;
+}
+
+.storage-item.disk-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    background-color: var(--bs-secondary-bg, #e9ecef);
+}
+
+.storage-item.selected {
+    border-color: var(--bs-primary, #0d6efd);
+    border-width: 2px;
+    background-color: rgba(var(--bs-primary-rgb, 13, 110, 253), 0.05);
+}
+
+.storage-item .item-label {
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: 0.9rem;
+}
+
+.storage-item .item-value {
+    color: var(--bs-body-color, #212529);
+    font-weight: 500;
+}
+
+.storage-item .progress-container {
+    width: 100%;
+    height: 10px;
+    background-color: var(--bs-tertiary-bg, #f8f9fa);
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid var(--bs-border-color, rgba(0,0,0,.125));
+}
+
+.storage-item .progress-fill {
+    height: 100%;
+    background-color: var(--bs-primary, #0d6efd);
+}
+
+.storage-item.critical .progress-fill {
+    background-color: var(--bs-danger, #dc3545);
+}
+
+.storage-item.warning .progress-fill {
+    background-color: var(--bs-warning, #ffc107);
+}
+
+/* Dark mode specific overrides */
+[data-bs-theme="dark"] .storage-item {
+    background-color: var(--bs-tertiary-bg, #343a40);
+    border-color: var(--bs-border-color, rgba(255,255,255,.075));
+}
+
+[data-bs-theme="dark"] .storage-item:hover {
+    background-color: var(--bs-secondary-bg, #495057);
+}
+
+[data-bs-theme="dark"] .storage-item .item-label {
+    color: var(--bs-secondary-color, #adb5bd);
+}
+
+[data-bs-theme="dark"] .storage-item .item-value {
+    color: var(--bs-body-color, #060c11);
+}
+
+[data-bs-theme="dark"] .storage-item .progress-container {
+    background-color: var(--bs-dark, #212529);
+    border-color: var(--bs-border-color, rgba(255,255,255,.075));
+}
+
+[data-bs-theme="dark"] .storage-item.selected {
+    background-color: rgba(var(--bs-primary-rgb, 13, 110, 253), 0.15);
+}
+
+/* Backward compatibility with existing performance-item classes */
+.performance-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    background-color: var(--bs-tertiary-bg, #f8f9fa);
+    border: 1px solid var(--bs-border-color, rgba(0,0,0,.125));
+    border-radius: var(--bs-border-radius, 0.375rem);
+    transition: all 0.2s ease;
+}
+
+.performance-item.disk-card {
+    cursor: pointer;
+}
+
+.performance-item.disk-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    background-color: var(--bs-secondary-bg, #e9ecef);
+}
+
+.performance-item.selected {
+    border-color: var(--bs-primary, #0d6efd);
+    border-width: 2px;
+    background-color: rgba(var(--bs-primary-rgb, 13, 110, 253), 0.05);
+}
+
+.performance-item .label {
+    color: var(--bs-secondary-color, #6c757d);
+    font-size: 0.9rem;
+}
+
+.performance-item .value {
+    color: var(--bs-body-color, #212529);
+    font-weight: 500;
+}
+
+.performance-item .progress-bar {
+    width: 100%;
+    height: 10px;
+    background-color: var(--bs-tertiary-bg, #f8f9fa);
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid var(--bs-border-color, rgba(0,0,0,.125));
+}
+
+.performance-item .progress {
+    height: 100%;
+    background-color: var(--bs-primary, #0d6efd);
+}
+
+.performance-item.critical .progress {
+    background-color: var(--bs-danger, #dc3545);
+}
+
+.performance-item.warning .progress {
+    background-color: var(--bs-warning, #ffc107);
+}
+
+/* Dark mode specific overrides for backward compatibility */
+[data-bs-theme="dark"] .performance-item {
+    background-color: var(--bs-tertiary-bg, #343a40);
+    border-color: var(--bs-border-color, rgba(255,255,255,.075));
+}
+
+[data-bs-theme="dark"] .performance-item:hover {
+    background-color: var(--bs-secondary-bg, #495057);
+}
+
+[data-bs-theme="dark"] .performance-item .label {
+    color: var(--bs-secondary-color, #adb5bd);
+}
+
+[data-bs-theme="dark"] .performance-item .value,
+[data-bs-theme="dark"] .performance-item .percentage-value {
+    color: var(--bs-body-color, #e9ecef) !important;
+}
+
+[data-bs-theme="dark"] .performance-item .progress-bar {
+    background-color: var(--bs-dark, #212529);
+    border-color: var(--bs-border-color, rgba(255,255,255,.075));
+}
+
+[data-bs-theme="dark"] .performance-item.selected {
+    background-color: rgba(var(--bs-primary-rgb, 13, 110, 253), 0.15);
+}
+
+/* File Type Icons */
+.file-type-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+/* Duplicate file rows */
+.duplicate-file-row {
+    background-color: var(--bs-tertiary-bg);
+}
+
+[data-bs-theme="dark"] .duplicate-file-row {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Health indicators */
+.health-good {
+    border-left: 4px solid var(--bs-success);
+}
+
+.health-warning {
+    border-left: 4px solid var(--bs-warning);
+}
+
+.health-critical {
+    border-left: 4px solid var(--bs-danger);
+}
+
+/* Permission issues */
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
