@@ -1,55 +1,112 @@
+@page "/performance"
 @using qsPlus.Services
 @inject SystemPerformanceService PerformanceService
 @implements IDisposable
 
-<div class="performance-card">
-    <h3>System Performance</h3>
+<PageTitle>Performance</PageTitle>
+
+<link href="css/performance.css" rel="stylesheet" />
+
+<div class="container py-4">
+    <h3 class="mb-4 text-center">System Performance Monitor</h3>
     
-    <div class="performance-item">
-        <span class="label">Uptime:</span>
-        <span class="value">@PerformanceService.GetFormattedUptime()</span>
-    </div>
-    
-    <div class="performance-item">
-        <span class="label">CPU Usage:</span>
-        <span class="value">@cpuUsage%</span>
-        <div class="progress-bar">
-            <div class="progress" style="width: @cpuUsage%"></div>
+    <div class="row row-cols-1 row-cols-md-1 g-4 mb-5">
+        <div class="col">
+            <div class="card performance-card h-100">
+                <div class="card-header-custom">
+                    <div class="icon-container icon-pulse">
+                        <i class="bi bi-activity fs-1 text-white"></i>
+                    </div>
+                    <h4 class="card-title text-center mb-0">System Metrics</h4>
+                </div>
+                
+                <div class="card-body p-4">
+                    @if (!isLoaded)
+                    {
+                        <div class="text-center my-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading system metrics...</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="performance-item">
+                                    <span class="label">Uptime</span>
+                                    <span class="value">@PerformanceService.GetFormattedUptime()</span>
+                                </div>
+                                
+                                <div class="performance-item">
+                                    <span class="label">Operating System</span>
+                                    <span class="value">@PerformanceService.GetOperatingSystemInfo()</span>
+                                </div>
+                                
+                                <div class="performance-item">
+                                    <span class="label">Processors</span>
+                                    <span class="value">@PerformanceService.GetProcessorCount()</span>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="performance-item @(cpuUsage > 80 ? "critical" : cpuUsage > 60 ? "warning" : "")">
+                                    <span class="label">CPU Usage</span>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="value">@cpuUsage.ToString("0.0")%</span>
+                                        <i class="@(cpuUsage > 80 ? "bi bi-exclamation-triangle text-danger" : 
+                                                  cpuUsage > 60 ? "bi bi-exclamation-circle text-warning" : 
+                                                  "bi bi-check-circle text-success")"></i>
+                                    </div>
+                                    <div class="progress-bar">
+                                        <div class="progress" style="width: @cpuUsage%"></div>
+                                    </div>
+                                </div>
+                                
+                                <div class="performance-item">
+                                    <span class="label">Available RAM</span>
+                                    <span class="value">@availableRam.ToString("N0") MB</span>
+                                    <div class="progress-bar">
+                                        <div class="progress" style="width: @(100 - (availableRam / totalRam * 100))%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
         </div>
-    </div>
-    
-    <div class="performance-item">
-        <span class="label">Available RAM:</span>
-        <span class="value">@availableRam MB</span>
-    </div>
-    
-    <div class="performance-item">
-        <span class="label">OS:</span>
-        <span class="value">@PerformanceService.GetOperatingSystemInfo()</span>
-    </div>
-    
-    <div class="performance-item">
-        <span class="label">Processors:</span>
-        <span class="value">@PerformanceService.GetProcessorCount()</span>
     </div>
 </div>
 
 @code {
     private double cpuUsage = 0;
     private double availableRam = 0;
+    private double totalRam = 1;
     private System.Threading.Timer? _timer;
+    private bool isLoaded = false;
     
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        // Update performance data initially
-        UpdatePerformanceData();
+        // Load the static data that doesn't change
+        totalRam = PerformanceService.GetTotalRamInMB();
         
-        // Set up timer to refresh values every 5 seconds
+        // Load data asynchronously
+        await Task.Run(() => {
+            UpdatePerformanceData();
+            isLoaded = true;
+        });
+        
+        // Update the UI
+        StateHasChanged();
+        
+        // Set up timer for subsequent updates
         _timer = new System.Threading.Timer(_ =>
         {
             UpdatePerformanceData();
             InvokeAsync(StateHasChanged);
-        }, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+        }, null, TimeSpan.FromSeconds(2), TimeSpan.FromSeconds(2));
     }
     
     private void UpdatePerformanceData()
@@ -63,36 +120,3 @@
         _timer?.Dispose();
     }
 }
-
-<style>
-    .performance-card {
-        background-color: #f5f5f5;
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    .performance-item {
-        margin-bottom: 12px;
-    }
-    
-    .label {
-        font-weight: bold;
-        display: inline-block;
-        width: 130px;
-    }
-    
-    .progress-bar {
-        height: 8px;
-        background-color: #e0e0e0;
-        border-radius: 4px;
-        margin-top: 4px;
-        overflow: hidden;
-    }
-    
-    .progress {
-        height: 100%;
-        background-color: #4caf50;
-    }
-</style>
