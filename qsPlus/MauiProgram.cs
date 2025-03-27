@@ -14,7 +14,7 @@ public static class MauiProgram
 			{
 				fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
 			});
-
+		builder.Services.AddScoped<ThemeService>();
 		builder.Services.AddMauiBlazorWebView();
 		builder.Services.AddSingleton<SystemPerformanceService>();
 

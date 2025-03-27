@@ -1,17 +1,45 @@
 ﻿@inherits LayoutComponentBase
+@inject ThemeService ThemeService
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
 
-<div class="page">
+<div class="page @(ThemeService.IsDarkMode ? "dark-mode" : "")">
     <div class="sidebar">
         <NavMenu />
     </div>
 
     <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+        <div class="top-row px-4 justify-content-between">
+            <div>
+                <a href="https://confluence.rsi.lexisnexis.com/" target="_blank">About</a>
+            </div>
+            <div>
+                <button class="btn btn-sm @(ThemeService.IsDarkMode ? "btn-light" : "btn-dark")" @onclick="ToggleTheme">
+                    <i class="bi @(ThemeService.IsDarkMode ? "bi-sun" : "bi-moon")"></i>
+                </button>
+            </div>
         </div>
 
-        <article class="container">
+        <article class="content px-4">
             @Body
         </article>
     </main>
 </div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await ThemeService.InitializeAsync();
+        ThemeService.OnThemeChanged += StateHasChanged;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        ThemeService.OnThemeChanged -= StateHasChanged;
+    }
+
+    private async Task ToggleTheme()
+    {
+        await ThemeService.ToggleThemeAsync();
+    }
+}

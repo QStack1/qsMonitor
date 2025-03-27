@@ -1,13 +1,57 @@
 ﻿@page "/"
 
-<PageTitle>System Monitor</PageTitle>
+<PageTitle>Home</PageTitle>
 
-<div class="container">
-    <h1>System Monitor</h1>
-
-    <Performance />
+<div class="container my-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold">Welcome to qsPlus</h1>
+        <p class="lead">Modern monitoring and service management</p>
+    </div>
     
+    <div class="row row-cols-1 row-cols-md-3 g-4 mb-5">
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-activity fs-1 text-primary mb-3"></i>
+                    <h5 class="card-title">Service Monitoring</h5>
+                    <p class="card-text">Monitor and manage SharePoint and other critical services.</p>
+                    <a href="spservice" class="btn btn-primary">View Services</a>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-graph-up fs-1 text-primary mb-3"></i>
+                    <h5 class="card-title">Performance Metrics</h5>
+                    <p class="card-text">Track system performance and identify bottlenecks.</p>
+                    <button class="btn btn-primary">View Metrics</button>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body text-center p-4">
+                    <i class="bi bi-gear fs-1 text-primary mb-3"></i>
+                    <h5 class="card-title">Configuration</h5>
+                    <p class="card-text">Manage system settings and preferences.</p>
+                    <button class="btn btn-primary">Settings</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-5">
+        <div class="card-body">
+            <h2>System Overview</h2>
+            <div class="progress mb-3" style="height: 25px;">
+                <div class="progress-bar bg-success" role="progressbar" style="width: 85%;" 
+                     aria-valuenow="85" aria-valuemin="0" aria-valuemax="100">85% Services Online</div>
+            </div>
+            <div class="d-flex justify-content-between small text-muted">
+                <span>Last updated: @DateTime.Now.ToString("g")</span>
+                <span><i class="bi bi-check-circle me-1"></i>System healthy</span>
+            </div>
+        </div>
+    </div>
 </div>
-
-@code {
-}
