@@ -26,8 +26,6 @@ namespace qsPlus
 
             builder.Services.AddScoped<ThemeService>();
             builder.Services.AddMauiBlazorWebView();
-            builder.Services.AddSingleton<SystemPerformanceService>();
-            builder.Services.AddSingleton<SystemStorageService>();
             builder.Services.AddSingleton<SignalRConnectionService>();
             builder.Services.AddHostedService(sp => sp.GetRequiredService<SignalRConnectionService>());
             
