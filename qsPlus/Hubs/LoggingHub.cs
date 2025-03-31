@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
+using qsPlus.Services;
+using qsPlus.Models;
 using System.Threading.Tasks;
 
 namespace qsPlus.Hubs
@@ -7,39 +9,36 @@ namespace qsPlus.Hubs
     public class LoggingHub : Hub
     {
         private readonly ILogger<LoggingHub> _logger;
+        private readonly LogFileManager _logFileManager;
 
-        public LoggingHub(ILogger<LoggingHub> logger)
+        public LoggingHub(ILogger<LoggingHub> logger, LogFileManager logFileManager)
         {
             _logger = logger;
+            _logFileManager = logFileManager;
         }
 
         public async Task SendLogMessage(LogMessage message)
         {
-            _logger.LogInformation("Received log message from {Application}", message.ApplicationName);
+            _logger.LogInformation("Received log message from {ApplicationName}: {Message}", 
+                message.ApplicationName, message.Message);
+
+            // Write to file
+            await _logFileManager.WriteLogMessageAsync(message);
+
+            // Broadcast to clients
             await Clients.All.SendAsync("ReceiveLogMessage", message);
         }
 
-        public override Task OnConnectedAsync()
+        public override async Task OnConnectedAsync()
         {
             _logger.LogInformation("Client connected: {ConnectionId}", Context.ConnectionId);
-            return base.OnConnectedAsync();
+            await base.OnConnectedAsync();
         }
 
-        public override Task OnDisconnectedAsync(Exception? exception)
+        public override async Task OnDisconnectedAsync(Exception exception)
         {
             _logger.LogInformation("Client disconnected: {ConnectionId}", Context.ConnectionId);
-            return base.OnDisconnectedAsync(exception);
+            await base.OnDisconnectedAsync(exception);
         }
-    }
-
-    public class LogMessage
-    {
-        public string? Message { get; set; }
-        public string? ExceptionType { get; set; }
-        public string? StackTrace { get; set; }
-        public string? Source { get; set; }
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-        public string? ApplicationName { get; set; }
-        public string? LogLevel { get; set; }
     }
 }

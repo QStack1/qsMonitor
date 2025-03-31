@@ -1,0 +1,317 @@
+@page "/logfiles"
+@using qsPlus.Services
+@using System.Text
+@inject LogFileManager LogFileManager
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+<h3>Log Files</h3>
+
+<div class="row mb-3">
+    <div class="col-auto">
+        <button class="btn btn-primary" @onclick="CreateNewLogFile">
+            <i class="bi bi-file-earmark-plus"></i> New Log File
+        </button>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-secondary" @onclick="RefreshLogFiles">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-warning" @onclick="ClearCurrentLogFile">
+            <i class="bi bi-eraser"></i> Clear Current Log
+        </button>
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-danger" @onclick="ConfirmDeleteAllLogs">
+            <i class="bi bi-trash"></i> Delete All Logs
+        </button>
+    </div>
+</div>
+
+@if (_isLoading)
+{
+    <div class="d-flex justify-content-center my-4">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (_logFiles == null || !_logFiles.Any())
+{
+    <div class="alert alert-info">
+        No log files found. Logs will be created when messages are received.
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-4">
+            <div class="list-group" role="tablist">
+                @foreach (var logFile in _logFiles)
+                {
+                    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(logFile.FilePath == _selectedLogFile ? "active" : "")" 
+                       @onclick="() => SelectLogFile(logFile.FilePath)" 
+                       href="javascript:void(0);" 
+                       role="tab">
+                        <div>
+                            <div class="fw-bold">
+                                @logFile.FileName
+                                @if (logFile.IsCurrentLogFile)
+                                {
+                                    <span class="badge bg-primary ms-2">Current</span>
+                                }
+                            </div>
+                            <small>
+                                <span class="me-2">@logFile.LastWriteTime.ToString("g")</span>
+                                <span>@logFile.FormattedSize</span>
+                            </small>
+                        </div>
+                        <button class="btn btn-sm btn-danger" @onclick:stopPropagation="true" @onclick="() => ConfirmDeleteLogFile(logFile)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </a>
+                }
+            </div>
+        </div>
+        <div class="col-md-8">
+            @if (!string.IsNullOrEmpty(_selectedLogFile))
+            {
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>Log Content</span>
+                        <div>
+                            <button class="btn btn-sm btn-primary me-2" @onclick="RefreshSelectedLogContent">
+                                <i class="bi bi-arrow-clockwise"></i> Refresh
+                            </button>
+                            <button class="btn btn-sm btn-secondary" @onclick="CopyLogContentToClipboard">
+                                <i class="bi bi-clipboard"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @if (_isLoadingContent)
+                        {
+                            <div class="d-flex justify-content-center my-4">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading log content...</span>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <pre class="log-content">@_selectedLogContent</pre>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-secondary">
+                    <i class="bi bi-info-circle"></i> Select a log file to view its content.
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@if (_showDeleteConfirmation)
+{
+    <div class="modal fade show" tabindex="-1" style="display: block;">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Confirm Delete</h5>
+                    <button type="button" class="btn-close" @onclick="CancelDelete"></button>
+                </div>
+                <div class="modal-body">
+                    @if (_deleteAllConfirmation)
+                    {
+                        <p>Are you sure you want to delete all log files?</p>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="keepCurrentLog" @bind="_keepCurrentLogWhenDeletingAll">
+                            <label class="form-check-label" for="keepCurrentLog">
+                                Keep current log file
+                            </label>
+                        </div>
+                    }
+                    else
+                    {
+                        <p>Are you sure you want to delete this log file?</p>
+                        <p><strong>@Path.GetFileName(_logFileToDelete)</strong></p>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CancelDelete">Cancel</button>
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmDelete">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<style>
+    .log-content {
+        max-height: 70vh;
+        overflow-y: auto;
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: 0.25rem;
+        font-family: monospace;
+        white-space: pre-wrap;
+        font-size: 0.875rem;
+    }
+</style>
+
+@code {
+    private List<LogFileInfo> _logFiles;
+    private string _selectedLogFile;
+    private string _selectedLogContent;
+    private bool _isLoading = true;
+    private bool _isLoadingContent = false;
+    private bool _showDeleteConfirmation = false;
+    private bool _deleteAllConfirmation = false;
+    private string _logFileToDelete;
+    private bool _keepCurrentLogWhenDeletingAll = true;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        // Subscribe to log files changed event
+        LogFileManager.LogFilesChanged += OnLogFilesChanged;
+        
+        await RefreshLogFiles();
+    }
+    
+    private async Task RefreshLogFiles()
+    {
+        _isLoading = true;
+        StateHasChanged();
+        
+        _logFiles = LogFileManager.GetLogFiles().ToList();
+        
+        // If there are log files and no selection, select the current file
+        if (_logFiles.Any() && string.IsNullOrEmpty(_selectedLogFile))
+        {
+            var currentLog = _logFiles.FirstOrDefault(f => f.IsCurrentLogFile);
+            if (currentLog != null)
+            {
+                await SelectLogFile(currentLog.FilePath);
+            }
+            else
+            {
+                await SelectLogFile(_logFiles.First().FilePath);
+            }
+        }
+        
+        _isLoading = false;
+        StateHasChanged();
+    }
+    
+    private async Task SelectLogFile(string filePath)
+    {
+        _selectedLogFile = filePath;
+        await RefreshSelectedLogContent();
+    }
+    
+    private async Task RefreshSelectedLogContent()
+    {
+        if (string.IsNullOrEmpty(_selectedLogFile))
+            return;
+            
+        _isLoadingContent = true;
+        StateHasChanged();
+        
+        _selectedLogContent = await LogFileManager.GetLogFileContentAsync(_selectedLogFile);
+        
+        _isLoadingContent = false;
+        StateHasChanged();
+    }
+    
+    private async Task CreateNewLogFile()
+    {
+        var result = await LogFileManager.CreateNewLogFileAsync();
+        if (result)
+        {
+            await RefreshLogFiles();
+        }
+    }
+    
+    private async Task ClearCurrentLogFile()
+    {
+        var result = await LogFileManager.ClearCurrentLogFileAsync();
+        if (result)
+        {
+            await RefreshSelectedLogContent();
+        }
+    }
+    
+    private void ConfirmDeleteLogFile(LogFileInfo logFile)
+    {
+        _showDeleteConfirmation = true;
+        _deleteAllConfirmation = false;
+        _logFileToDelete = logFile.FilePath;
+        StateHasChanged();
+    }
+    
+    private void ConfirmDeleteAllLogs()
+    {
+        _showDeleteConfirmation = true;
+        _deleteAllConfirmation = true;
+        StateHasChanged();
+    }
+    
+    private async Task ConfirmDelete()
+    {
+        bool result;
+        
+        if (_deleteAllConfirmation)
+        {
+            result = await LogFileManager.DeleteAllLogFilesAsync(_keepCurrentLogWhenDeletingAll);
+        }
+        else
+        {
+            result = await LogFileManager.DeleteLogFileAsync(_logFileToDelete);
+            if (result && _logFileToDelete == _selectedLogFile)
+            {
+                _selectedLogFile = null;
+                _selectedLogContent = null;
+            }
+        }
+        
+        _showDeleteConfirmation = false;
+        
+        if (result)
+        {
+            await RefreshLogFiles();
+        }
+    }
+    
+    private void CancelDelete()
+    {
+        _showDeleteConfirmation = false;
+        _logFileToDelete = null;
+        StateHasChanged();
+    }
+    
+    private async Task CopyLogContentToClipboard()
+    {
+        if (!string.IsNullOrEmpty(_selectedLogContent))
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", _selectedLogContent);
+        }
+    }
+    
+    private void OnLogFilesChanged(IEnumerable<LogFileInfo> logFiles)
+    {
+        _logFiles = logFiles.ToList();
+        StateHasChanged();
+    }
+    
+    public async ValueTask DisposeAsync()
+    {
+        // Unsubscribe from the event
+        LogFileManager.LogFilesChanged -= OnLogFilesChanged;
+    }
+}

@@ -172,19 +172,31 @@ namespace QStackLogger
                 {
                     try
                     {
-                        await _hubConnection.SendAsync("SendLogMessage", message);
+                        // Convert the LogMessage to an anonymous object with exact property names
+                        var logObj = new
+                        {
+                            Message = message.Message,
+                            ExceptionType = message.ExceptionType,
+                            StackTrace = message.StackTrace,
+                            Source = message.Source,
+                            Timestamp = message.Timestamp,
+                            ApplicationName = message.ApplicationName,
+                            LogLevel = message.LogLevel
+                        };
+                        
+                        await _hubConnection.SendAsync("SendLogMessage", logObj);
                         return; // Success
                     }
-                    catch
+                    catch (Exception ex)
                     {
+                        // Log the exception
+                        Console.WriteLine($"Failed to send log to hub: {ex.Message}");
                         // Fall through to queue/file logging
                     }
                 }
 
-                // Add to pending queue
+                // Add to pending queue and write to file
                 EnqueuePendingLog(message);
-                
-                // Write to file as backup
                 WriteToFile(message);
             });
         }
@@ -261,15 +273,15 @@ namespace QStackLogger
             }
         }
 
-        private class LogMessage
+        public class LogMessage
         {
-            public string Message { get; set; }
-            public string ExceptionType { get; set; }
-            public string StackTrace { get; set; }
-            public string Source { get; set; }
+            public string? Message { get; set; }
+            public string? ExceptionType { get; set; }
+            public string? StackTrace { get; set; }
+            public string? Source { get; set; }
             public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-            public string ApplicationName { get; set; }
-            public string LogLevel { get; set; }
+            public string? ApplicationName { get; set; }
+            public string? LogLevel { get; set; }
         }
     }
 }

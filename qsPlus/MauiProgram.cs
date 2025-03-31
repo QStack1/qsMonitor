@@ -26,11 +26,19 @@ namespace qsPlus
 
             builder.Services.AddScoped<ThemeService>();
             builder.Services.AddMauiBlazorWebView();
+
+            builder.Services.AddSingleton<LogFileManager>();
+
+            // First register the SignalRHostedService as both itself and as IHostedService
+            builder.Services.AddSingleton<SignalRHostedService>();
+            //builder.Services.AddSingleton<IHostedService, SignalRHostedService>();
+            builder.Services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<SignalRHostedService>());
+
+            // Then register the SignalRConnectionService which depends on SignalRHostedService
             builder.Services.AddSingleton<SignalRConnectionService>();
-            builder.Services.AddHostedService(sp => sp.GetRequiredService<SignalRConnectionService>());
-            
-            // Configure local SignalR server
-            builder.Services.AddSingleton<IHostedService, SignalRHostedService>();
+            builder.Services.AddSingleton<IHostedService>(sp => sp.GetRequiredService<SignalRConnectionService>());
+
+            // Rest of your service registrations
             builder.Services.AddRadzenComponents();
 
 #if DEBUG
@@ -48,10 +56,12 @@ namespace qsPlus
         private WebApplication? _app;
         public const int HubPort = 5117;
         private readonly ILogger<SignalRHostedService> _logger;
+        private readonly LogFileManager _logFileManager;
 
-        public SignalRHostedService(ILogger<SignalRHostedService> logger)
+        public SignalRHostedService(ILogger<SignalRHostedService> logger, LogFileManager logFileManager)
         {
             _logger = logger;
+            _logFileManager = logFileManager;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -66,7 +76,11 @@ namespace qsPlus
                     options.Listen(IPAddress.Loopback, HubPort);
                 });
                 
+                // Add SignalR
                 builder.Services.AddSignalR();
+                
+                // Share the LogFileManager from the main app with the SignalR host
+                builder.Services.AddSingleton<LogFileManager>(_logFileManager);
                 
                 _app = builder.Build();
                 
