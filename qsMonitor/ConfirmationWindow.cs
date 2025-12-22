@@ -24,7 +24,14 @@ namespace qsMonitor
 
         private void yesBtn_Click(object sender, EventArgs e)
         {
-            System.Diagnostics.Process.Start("ShutDown", "/r");
+            try
+            {
+                System.Diagnostics.Process.Start("shutdown", "/r /t 0");
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to restart computer: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
     }
 }

@@ -1,0 +1,99 @@
+﻿@using Radzen
+@inherits LayoutComponentBase
+@inject ThemeService ThemeService
+@inject IJSRuntime JSRuntime
+@inject SignalRConnectionService ConnectionService
+@inject NavigationManager NavigationManager
+@implements IAsyncDisposable
+
+<link href="css/performance.css" rel="stylesheet" />
+<link href="css/systemStorage.css" rel="stylesheet" />
+<script src="js/storage-helpers.js"></script>
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4 justify-content-between">
+            <div>
+                <a href="https://confluence.rsi.lexisnexis.com/" target="_blank">About</a>
+            </div>
+            <div>
+                <!-- Replace theme toggle with connection status -->
+                <div class="connection-status">
+                    @if (!ConnectionService.IsConnected)
+                    {
+                        <span class="badge bg-warning text-dark">Disconnected</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success">Connected</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<style>
+    .connection-status .badge {
+        padding: 5px 10px;
+        font-size: 0.875rem;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public EventCallback<bool> OnConnectionStatusChanged { get; set; }
+
+    private bool isConnected = false;
+    private string connectionError = "";
+    private CancellationTokenSource _retryTokenSource = new CancellationTokenSource();
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Subscribe to SignalR connection changes
+        ConnectionService.ConnectionChanged += HandleConnectionChanged;
+        isConnected = ConnectionService.IsConnected;
+        connectionError = ConnectionService.ConnectionError;
+        
+        // Start a background retry loop if not connected
+        if (!isConnected)
+        {
+            _ = RetryConnectionAsync(_retryTokenSource.Token);
+        }
+    }
+
+    private async Task RetryConnectionAsync(CancellationToken token)
+    {
+        // Continue trying until connected or token is cancelled.
+        while (!token.IsCancellationRequested && !ConnectionService.IsConnected)
+        {
+            await ConnectionService.AttemptReconnectAsync();
+            await Task.Delay(5000, token);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        ConnectionService.ConnectionChanged -= HandleConnectionChanged;
+        _retryTokenSource.Cancel();
+        _retryTokenSource.Dispose();
+    }
+
+    private async void HandleConnectionChanged(bool connected)
+    {
+        await InvokeAsync(() =>
+        {
+            isConnected = connected;
+            connectionError = ConnectionService.ConnectionError;
+            OnConnectionStatusChanged.InvokeAsync(connected);
+            StateHasChanged();
+        });
+    }
+}

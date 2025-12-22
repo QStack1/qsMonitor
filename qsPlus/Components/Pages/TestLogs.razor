@@ -1,0 +1,142 @@
+@using Microsoft.AspNetCore.SignalR.Client
+@using qsPlus.Hubs
+@using qsPlus.Services
+@inject SignalRConnectionService ConnectionService
+@implements IDisposable
+
+<h3>Test Log Generation</h3>
+
+@if (!isConnected)
+{
+    <div class="alert alert-warning">
+        Not connected to SignalR hub. @connectionError
+    </div>
+}
+else
+{
+    <div class="alert alert-success">
+        Connected to SignalR hub.
+    </div>
+}
+
+<div class="form-group">
+    <label>Application Name:</label>
+    <input @bind="applicationName" class="form-control" />
+</div>
+
+<div class="form-group">
+    <label>Log Message:</label>
+    <textarea @bind="logMessage" class="form-control" rows="3"></textarea>
+</div>
+
+<div class="form-group">
+    <label>Log Level:</label>
+    <select @bind="logLevel" class="form-control">
+        <option value="Information">Information</option>
+        <option value="Warning">Warning</option>
+        <option value="Error">Error</option>
+        <option value="Critical">Critical</option>
+        <option value="Debug">Debug</option>
+    </select>
+</div>
+
+<button class="btn btn-primary" @onclick="SendLog" disabled="@(!isConnected)">Send Test Log</button>
+<button class="btn btn-danger" @onclick="SendException" disabled="@(!isConnected)">Simulate Exception</button>
+<button class="btn btn-secondary" @onclick="TryReconnect">Try Reconnect</button>
+
+@code {
+    [Parameter]
+    public EventCallback<bool> OnConnectionStatusChanged { get; set; }
+    
+    private string applicationName = "Test App";
+    private string logMessage = "This is a test log message";
+    private string logLevel = "Information";
+    private bool isConnected = false;
+    private string connectionError = "";
+
+    protected override void OnInitialized()
+    {
+        // Register for connection events
+        ConnectionService.ConnectionChanged += HandleConnectionChanged;
+        
+        // Update initial state
+        isConnected = ConnectionService.IsConnected;
+        connectionError = ConnectionService.ConnectionError;
+    }
+    
+    private async void HandleConnectionChanged(bool connected)
+    {
+        // Use InvokeAsync since this callback might come from a non-UI thread
+        await InvokeAsync(async () =>
+        {
+            isConnected = connected;
+            connectionError = ConnectionService.ConnectionError;
+            await OnConnectionStatusChanged.InvokeAsync(connected);
+            StateHasChanged();
+        });
+    }
+    
+    private async Task TryReconnect()
+    {
+        await ConnectionService.AttemptReconnectAsync();
+    }
+
+    private async Task SendLog()
+    {
+        try
+        {
+            var log = new LogMessage
+            {
+                Message = logMessage,
+                ApplicationName = applicationName,
+                LogLevel = logLevel,
+                Timestamp = DateTime.UtcNow,
+                Source = "TestPage"
+            };
+
+            await ConnectionService.SendLogMessageAsync(log);
+        }
+        catch (Exception ex)
+        {
+            connectionError = $"Error sending log: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    private async Task SendException()
+    {
+        try
+        {
+            throw new InvalidOperationException("This is a test exception");
+        }
+        catch (Exception ex)
+        {
+            try
+            {
+                var log = new LogMessage
+                {
+                    Message = logMessage,
+                    ApplicationName = applicationName,
+                    LogLevel = "Error",
+                    ExceptionType = ex.GetType().Name,
+                    StackTrace = ex.StackTrace,
+                    Source = ex.Source,
+                    Timestamp = DateTime.UtcNow
+                };
+
+                await ConnectionService.SendLogMessageAsync(log);
+            }
+            catch (Exception sendEx)
+            {
+                connectionError = $"Error sending exception log: {sendEx.Message}";
+                StateHasChanged();
+            }
+        }
+    }
+    
+    public void Dispose()
+    {
+        // Just unsubscribe from the connection events
+        ConnectionService.ConnectionChanged -= HandleConnectionChanged;
+    }
+}
