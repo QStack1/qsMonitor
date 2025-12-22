@@ -65,10 +65,10 @@
             this.cpuLabel.Location = new System.Drawing.Point(17, 55);
             this.cpuLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.cpuLabel.Name = "cpuLabel";
-            this.cpuLabel.Size = new System.Drawing.Size(43, 24);
+            this.cpuLabel.Size = new System.Drawing.Size(43, 20);
             this.cpuLabel.TabIndex = 1;
             this.cpuLabel.Text = "CPU:";
-            this.cpuLabel.Click += new System.EventHandler(this.cpuLabel_Click);
+            this.cpuLabel.ForeColor = System.Drawing.Color.White;
             // 
             // availMemLabel
             // 
@@ -76,10 +76,10 @@
             this.availMemLabel.Location = new System.Drawing.Point(17, 117);
             this.availMemLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.availMemLabel.Name = "availMemLabel";
-            this.availMemLabel.Size = new System.Drawing.Size(153, 24);
+            this.availMemLabel.Size = new System.Drawing.Size(153, 20);
             this.availMemLabel.TabIndex = 2;
             this.availMemLabel.Text = "Available Memory:";
-            this.availMemLabel.Click += new System.EventHandler(this.availMemLabel_Click);
+            this.availMemLabel.ForeColor = System.Drawing.Color.White;
             // 
             // sysUpTimeLabel
             // 
@@ -87,20 +87,26 @@
             this.sysUpTimeLabel.Location = new System.Drawing.Point(17, 179);
             this.sysUpTimeLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.sysUpTimeLabel.Name = "sysUpTimeLabel";
-            this.sysUpTimeLabel.Size = new System.Drawing.Size(134, 24);
+            this.sysUpTimeLabel.Size = new System.Drawing.Size(134, 20);
             this.sysUpTimeLabel.TabIndex = 3;
             this.sysUpTimeLabel.Text = "System Up Time:";
-            this.sysUpTimeLabel.Click += new System.EventHandler(this.sysUpTimeLabel_Click);
+            this.sysUpTimeLabel.ForeColor = System.Drawing.Color.White;
             // 
             // randomVal
             // 
             this.randomVal.AutoSize = true;
             this.randomVal.Location = new System.Drawing.Point(17, 240);
             this.randomVal.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
+            // randomVal
+            // 
+            this.randomVal.AutoSize = true;
+            this.randomVal.Location = new System.Drawing.Point(17, 240);
+            this.randomVal.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.randomVal.Name = "randomVal";
-            this.randomVal.Size = new System.Drawing.Size(81, 24);
+            this.randomVal.Size = new System.Drawing.Size(81, 20);
             this.randomVal.TabIndex = 4;
-            this.randomVal.Text = "Random:";
+            this.randomVal.Text = "Process:";
+            this.randomVal.ForeColor = System.Drawing.Color.White;
             // 
             // groupBox1
             // 
@@ -112,6 +118,8 @@
             this.groupBox1.Controls.Add(this.availMemLabel);
             this.groupBox1.Controls.Add(this.randomVal);
             this.groupBox1.Controls.Add(this.sysUpTimeLabel);
+            this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.groupBox1.Location = new System.Drawing.Point(14, 19);
             this.groupBox1.Margin = new System.Windows.Forms.Padding(2, 4, 2, 4);
             this.groupBox1.Name = "groupBox1";
@@ -120,6 +128,7 @@
             this.groupBox1.TabIndex = 6;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Performance";
+            this.groupBox1.ForeColor = System.Drawing.Color.White;
             // 
             // randValueLabel
             // 
@@ -127,9 +136,10 @@
             this.randValueLabel.Location = new System.Drawing.Point(278, 240);
             this.randValueLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.randValueLabel.Name = "randValueLabel";
-            this.randValueLabel.Size = new System.Drawing.Size(133, 24);
+            this.randValueLabel.Size = new System.Drawing.Size(133, 20);
             this.randValueLabel.TabIndex = 9;
-            this.randValueLabel.Text = "randValueLabel";
+            this.randValueLabel.Text = "Select a process";
+            this.randValueLabel.ForeColor = System.Drawing.Color.White;
             // 
             // sysUpTimeValueLabel
             // 
@@ -157,13 +167,16 @@
             this.cpuValueLabel.Location = new System.Drawing.Point(278, 55);
             this.cpuValueLabel.Margin = new System.Windows.Forms.Padding(2, 0, 2, 0);
             this.cpuValueLabel.Name = "cpuValueLabel";
-            this.cpuValueLabel.Size = new System.Drawing.Size(82, 24);
+            this.cpuValueLabel.Size = new System.Drawing.Size(82, 20);
             this.cpuValueLabel.TabIndex = 6;
             this.cpuValueLabel.Text = "cpuValue";
+            this.cpuValueLabel.ForeColor = System.Drawing.Color.White;
+            this.cpuValueLabel.BackColor = System.Drawing.Color.Transparent;
             // 
             // taskList
             // 
             this.taskList.FormattingEnabled = true;
+            this.taskList.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)));
             this.taskList.Location = new System.Drawing.Point(34, 360);
             this.taskList.Margin = new System.Windows.Forms.Padding(2, 4, 2, 4);
             this.taskList.Name = "taskList";
@@ -173,13 +186,17 @@
             // 
             // killButton
             // 
+            this.killButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)));
+            this.killButton.BackColor = System.Drawing.Color.FromArgb(60, 60, 65);
+            this.killButton.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.killButton.ForeColor = System.Drawing.Color.White;
             this.killButton.Location = new System.Drawing.Point(259, 360);
             this.killButton.Margin = new System.Windows.Forms.Padding(2, 4, 2, 4);
             this.killButton.Name = "killButton";
             this.killButton.Size = new System.Drawing.Size(88, 44);
             this.killButton.TabIndex = 8;
             this.killButton.Text = "End Task";
-            this.killButton.UseVisualStyleBackColor = true;
+            this.killButton.UseVisualStyleBackColor = false;
             this.killButton.Click += new System.EventHandler(this.killButton_Click);
             // 
             // notifyIcon1
@@ -215,7 +232,9 @@
             // 
             // rebootBtn
             // 
-            this.rebootBtn.BackColor = System.Drawing.Color.Crimson;
+            this.rebootBtn.BackColor = System.Drawing.Color.FromArgb(192, 0, 0);
+            this.rebootBtn.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.rebootBtn.ForeColor = System.Drawing.Color.White;
             this.rebootBtn.Location = new System.Drawing.Point(33, 55);
             this.rebootBtn.Margin = new System.Windows.Forms.Padding(2, 4, 2, 4);
             this.rebootBtn.Name = "rebootBtn";
@@ -228,6 +247,8 @@
             // dangerZoneGB
             // 
             this.dangerZoneGB.Controls.Add(this.rebootBtn);
+            this.dangerZoneGB.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.dangerZoneGB.ForeColor = System.Drawing.Color.FromArgb(255, 100, 100);
             this.dangerZoneGB.Location = new System.Drawing.Point(760, 19);
             this.dangerZoneGB.Name = "dangerZoneGB";
             this.dangerZoneGB.Size = new System.Drawing.Size(439, 141);
@@ -237,17 +258,17 @@
             // 
             // Form1
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 24F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 20F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.AutoSize = true;
-            this.BackColor = System.Drawing.Color.DarkOliveGreen;
+            this.BackColor = System.Drawing.Color.FromArgb(45, 45, 48);
             this.ClientSize = new System.Drawing.Size(1338, 444);
             this.Controls.Add(this.dangerZoneGB);
             this.Controls.Add(this.killButton);
             this.Controls.Add(this.taskList);
             this.Controls.Add(this.groupBox1);
-            this.Font = new System.Drawing.Font("Bernard MT Condensed", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.ForeColor = System.Drawing.SystemColors.ControlLight;
+            this.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.ForeColor = System.Drawing.Color.White;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(2, 4, 2, 4);
             this.MinimumSize = new System.Drawing.Size(1080, 500);

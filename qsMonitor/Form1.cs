@@ -57,36 +57,70 @@ namespace qsMonitor
 
         private void killProcess(string procToKill)
         {
-            Process[] killThisProc = Process.GetProcessesByName(procToKill);
-
-            foreach (Process process in killThisProc)
+            if (string.IsNullOrEmpty(procToKill))
             {
-                process.Kill();
+                MessageBox.Show("Please select a process to terminate.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            try
+            {
+                Process[] killThisProc = Process.GetProcessesByName(procToKill);
+
+                if (killThisProc.Length == 0)
+                {
+                    MessageBox.Show($"Process '{procToKill}' not found.", "Process Not Found", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
+
+                foreach (Process process in killThisProc)
+                {
+                    process.Kill();
+                }
+                
+                MessageBox.Show($"Process '{procToKill}' terminated successfully.", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to terminate process: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
 
         private void getProcDetail(string procToKill)
         {
-            int memsize = 0;
-            PerformanceCounter PC = new PerformanceCounter();
-            PC.CategoryName = "Process";
-            PC.CounterName = "Working Set - Private";
-            PC.InstanceName = procToKill;
-            memsize = Convert.ToInt32(PC.NextValue()) / (int)(1024) / 10000;
-
-            Process[] killThisProc = Process.GetProcessesByName(procToKill);
-
-            foreach (Process process in killThisProc)
+            if (string.IsNullOrEmpty(procToKill))
             {
-                randValueLabel.Text = memsize.ToString() + "%";
+                randValueLabel.Text = "No process selected";
+                return;
+            }
+
+            try
+            {
+                PerformanceCounter PC = new PerformanceCounter();
+                PC.CategoryName = "Process";
+                PC.CounterName = "Working Set - Private";
+                PC.InstanceName = procToKill;
+                
+                // Get memory in bytes, convert to MB
+                float memMB = PC.NextValue() / (1024f * 1024f);
+
+                Process[] processes = Process.GetProcessesByName(procToKill);
+
+                if (processes.Length > 0)
+                {
+                    randValueLabel.Text = $"{memMB:F2} MB";
+                }
+                else
+                {
+                    randValueLabel.Text = "Process not found";
+                }
+            }
+            catch (Exception ex)
+            {
+                randValueLabel.Text = $"Error: {ex.Message}";
             }
         }
 
-
-        private void label1_Click(object sender, EventArgs e)
-        {
-
-        }
 
         private void timer1_Tick(object sender, EventArgs e)
         {
@@ -145,29 +179,24 @@ namespace qsMonitor
             }
         }
 
-        private void cpuLabel_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void availMemLabel_Click(object sender, EventArgs e)
-        {
-
-        }
-
-        private void sysUpTimeLabel_Click(object sender, EventArgs e)
-        {
-
-        }
-
         private void taskList_SelectedIndexChanged(object sender, EventArgs e)
         {
-            getProcDetail(taskList.SelectedItem.ToString());
+            if (taskList.SelectedItem != null)
+            {
+                getProcDetail(taskList.SelectedItem.ToString());
+            }
         }
 
         private void killButton_Click(object sender, EventArgs e)
         {
-            killProcess(taskList.SelectedItem.ToString());
+            if (taskList.SelectedItem != null)
+            {
+                killProcess(taskList.SelectedItem.ToString());
+            }
+            else
+            {
+                MessageBox.Show("Please select a process from the list.", "No Selection", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
         }
 
         // Form Size Changed

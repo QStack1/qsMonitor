@@ -38,18 +38,20 @@
             // 
             this.label1.AutoSize = true;
             this.label1.BackColor = System.Drawing.Color.Transparent;
-            this.label1.Font = new System.Drawing.Font("Showcard Gothic", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.label1.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.label1.ForeColor = System.Drawing.Color.Black;
             this.label1.Location = new System.Drawing.Point(211, 111);
             this.label1.Name = "label1";
-            this.label1.Size = new System.Drawing.Size(665, 30);
+            this.label1.Size = new System.Drawing.Size(500, 30);
             this.label1.TabIndex = 0;
             this.label1.Text = "Are you sure you want to reboot your computer?";
             // 
             // yesBtn
             // 
             this.yesBtn.BackColor = System.Drawing.Color.IndianRed;
-            this.yesBtn.Font = new System.Drawing.Font("Bernard MT Condensed", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.yesBtn.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.yesBtn.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.yesBtn.ForeColor = System.Drawing.Color.White;
             this.yesBtn.Location = new System.Drawing.Point(379, 225);
             this.yesBtn.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             this.yesBtn.Name = "yesBtn";
@@ -62,7 +64,9 @@
             // noBtn
             // 
             this.noBtn.BackColor = System.Drawing.Color.ForestGreen;
-            this.noBtn.Font = new System.Drawing.Font("Bernard MT Condensed", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.noBtn.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.noBtn.Font = new System.Drawing.Font("Segoe UI", 10F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.noBtn.ForeColor = System.Drawing.Color.White;
             this.noBtn.Location = new System.Drawing.Point(620, 225);
             this.noBtn.Margin = new System.Windows.Forms.Padding(2, 3, 2, 3);
             this.noBtn.Name = "noBtn";
@@ -82,7 +86,7 @@
             this.Controls.Add(this.noBtn);
             this.Controls.Add(this.yesBtn);
             this.Controls.Add(this.label1);
-            this.Font = new System.Drawing.Font("Bernard MT Condensed", 10F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.ForeColor = System.Drawing.SystemColors.ControlLight;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximumSize = new System.Drawing.Size(1080, 540);
